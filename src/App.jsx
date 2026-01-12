@@ -13,34 +13,40 @@ import "@xyflow/react/dist/style.css";
 // 导入自定义的通用节点组件
 import BaseNode from "./components/BaseNode";
 
-// 定义初始节点，使用自定义的 baseNode 类型
+// 导入节点注册表
+import { NODE_REGISTRY } from "./constants/nodeRegistry";
+
+// 根据注册表创建节点数据
+const createNodeFromRegistry = (id, nodeKey, position) => {
+  const config = NODE_REGISTRY.nodes[nodeKey];
+  // 默认节点类型为 baseNode
+  config.type = config.type || "baseNode";
+
+  // 查找该节点所属的分类以获取颜色
+  const categoryKey = Object.keys(NODE_REGISTRY.categories).find((cat) =>
+    NODE_REGISTRY.categories[cat].nodes.includes(nodeKey)
+  );
+  const color = categoryKey
+    ? NODE_REGISTRY.categories[categoryKey].color
+    : undefined;
+
+  return {
+    id,
+    type: config.type,
+    position,
+    data: {
+      ...config,
+      color,
+    },
+  };
+};
+
+// 使用注册表定义初始节点
 const initialNodes = [
-  {
-    id: "node-1",
-    type: "baseNode",
-    position: { x: 100, y: 100 },
-    data: {
-      label: "节点1",
-      inputs: [{ id: "in-1", label: "输入1" }],
-      outputs: [
-        { id: "out-1", label: "输出1" },
-        { id: "out-2", label: "输出2" },
-      ],
-    },
-  },
-  {
-    id: "node-2",
-    type: "baseNode",
-    position: { x: 400, y: 100 },
-    data: {
-      label: "节点2",
-      inputs: [
-        { id: "in-2", label: "输入2" },
-        { id: "in-3", label: "输入3" },
-      ],
-      outputs: [{ id: "out-2", label: "输出2" }],
-    },
-  },
+  createNodeFromRegistry("node-1", "node1", { x: 100, y: 100 }),
+  createNodeFromRegistry("node-2", "node2", { x: 350, y: 100 }),
+  createNodeFromRegistry("node-3", "node3", { x: 600, y: 100 }),
+  createNodeFromRegistry("node-4", "node4", { x: 850, y: 100 }),
 ];
 
 // 定义初始连线
@@ -48,9 +54,23 @@ const initialEdges = [
   {
     id: "e1-2",
     source: "node-1",
-    sourceHandle: "out-1",
+    sourceHandle: "out",
     target: "node-2",
-    targetHandle: "in-2",
+    targetHandle: "in",
+  },
+  {
+    id: "e2-3",
+    source: "node-2",
+    sourceHandle: "out",
+    target: "node-3",
+    targetHandle: "in",
+  },
+  {
+    id: "e3-4",
+    source: "node-3",
+    sourceHandle: "out",
+    target: "node-4",
+    targetHandle: "in",
   },
 ];
 
@@ -87,7 +107,7 @@ function App() {
         colorMode="light"
         fitView
         defaultEdgeOptions={{
-          style: { strokeWidth: 3, stroke: "#fff"},
+          style: { strokeWidth: 3, stroke: "#fff" },
         }}
       >
         <Controls />
@@ -101,5 +121,5 @@ const styles = {
     height: "100vh",
     background: "#e2e9faff",
   },
-}
+};
 export default App;

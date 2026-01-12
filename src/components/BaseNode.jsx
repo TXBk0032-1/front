@@ -3,7 +3,7 @@ import { Handle, Position } from "@xyflow/react";
 function BaseNode({ data }) {
   return (
     // 统一通过 styles 对象引用
-    <div style={styles.container}>
+    <div style={{ ...styles.container, background: data.color || styles.container.background }}>
       {/* 左侧：输入端口 */}
       <div style={styles.portContainer}>
         {data.inputs?.map((input, index) => (

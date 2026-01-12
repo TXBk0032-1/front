@@ -117,3 +117,42 @@ yarn add @xyflow/react
 我创建了个BaseNode组件，导入了Handle, Position，然后写了下布局以及节点基础外观。
 在App.jsx中，我导入了BaseNode组件，然后在nodeTypes中注册了它。
 由于我个人喜欢vue那种的样式写法，不喜欢react里的内联写法和独立文件写法，所以我在BaseNode组件中写了个styles对象，对象式变量写法，把样式写成一个对象，放在文件最底部。
+
+### 5. 编写节点注册表
+
+由于现在还没有后端，我需要编写一个单独的节点注册表文件，模拟已经获取完后端返回的节点列表。
+首先思考一下前端这边节点需要什么信息，而且还是要分组的。
+我写一个格式：
+```json
+// 注册表结构
+{
+  // 按分类组织
+  "categories": {
+    "node_group1": { "label": "节点组1", "color": "rgb(137, 146, 235)", "nodes": ["node1", "node2"] },
+    "node_group2": { "label": "节点组2", "color": "rgb(242, 177, 144)", "nodes": ["node3", "node4"] },
+    // ...
+  },
+  // 节点配置映射
+  "nodes": {
+    "node1": { /* config */ },
+    "node2": { /* config */ },
+    "node3": { /* config */ },
+    "node4": { /* config */ },
+    // ...
+  }
+}
+```
+然后具体写一下node1的config：
+```json
+{
+  "label": "节点1",
+  "inputs": [{ "id": "in", "label": "输入" }],
+  "outputs": [{ "id": "out", "label": "输出" }],
+  "params": {
+    "param1": { "label": "参数1", "type": "number", "default": 1 },
+    "param2": { "label": "参数2", "type": "number", "default": 2 },
+  },
+}
+```
+
+
