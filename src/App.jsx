@@ -21,7 +21,6 @@ const initialNodes = [
     position: { x: 100, y: 100 },
     data: {
       label: "节点1",
-      description: "描述1",
       inputs: [{ id: "in-1", label: "输入1" }],
       outputs: [
         { id: "out-1", label: "输出1" },
@@ -35,7 +34,6 @@ const initialNodes = [
     position: { x: 400, y: 100 },
     data: {
       label: "节点2",
-      description: "描述2",
       inputs: [
         { id: "in-2", label: "输入2" },
         { id: "in-3", label: "输入3" },
@@ -78,7 +76,7 @@ function App() {
 
   return (
     // React Flow 需要一个有明确宽高的容器
-    <div style={{ width: "100vw", height: "100vh", background: "#e2e9faff" }}>
+    <div style={styles.container}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -97,5 +95,11 @@ function App() {
     </div>
   );
 }
-
+const styles = {
+  container: {
+    width: "100vw",
+    height: "100vh",
+    background: "#e2e9faff",
+  },
+}
 export default App;
