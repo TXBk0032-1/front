@@ -104,3 +104,10 @@
 ```bash
 yarn add @xyflow/react
 ```
+
+### 3. 尝试接入react flow
+
+读了下文档，其实很简单
+就是导入 React Flow 提供的组件，然后hook相关的状态管理函数，传给 ReactFlow 组件
+哦还有个useCallback，用来优化性能
+目前已经更新了 App.jsx 文件，实现了基本的节点渲染和连线交互功能，确保能用。
