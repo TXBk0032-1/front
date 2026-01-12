@@ -111,3 +111,9 @@ yarn add @xyflow/react
 就是导入 React Flow 提供的组件，然后hook相关的状态管理函数，传给 ReactFlow 组件
 哦还有个useCallback，用来优化性能
 目前已经更新了 App.jsx 文件，实现了基本的节点渲染和连线交互功能，确保能用。
+
+### 4. 封装通用节点组件
+
+我创建了个BaseNode组件，导入了Handle, Position，然后写了下布局以及节点基础外观。
+在App.jsx中，我导入了BaseNode组件，然后在nodeTypes中注册了它。
+由于我个人喜欢vue那种的样式写法，不喜欢react里的内联写法和独立文件写法，所以我在BaseNode组件中写了个styles对象，对象式变量写法，把样式写成一个对象，放在文件最底部。
