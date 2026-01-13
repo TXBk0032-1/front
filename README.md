@@ -246,23 +246,6 @@ yarn add @xyflow/react
 
 App.jsx 代码越写越长，嵌套层级也越来越深，阅读起来很费劲。这次做了一次大规模的模块化拆分，把不同功能的代码分离到独立文件中。
 
-**新增的文件结构：**
-
-```
-src/
-├── hooks/                    # 自定义 Hook（功能逻辑）
-│   ├── useHistory.js         # 撤销/重做功能
-│   ├── useClipboard.js       # 复制/粘贴功能
-│   └── useKeyboardShortcuts.js # 键盘快捷键监听
-├── utils/                    # 工具函数
-│   └── createNode.js         # 创建节点对象的函数
-├── config/                   # 配置文件
-│   ├── initialData.js        # 画布初始数据（默认节点和连线）
-│   └── flowConfig.js         # React Flow 的各种配置项
-```
-
-**各文件职责说明：**
-
 - `useHistory.js`：管理历史记录栈，实现撤销（Ctrl+Z）和重做（Ctrl+Y）
 - `useClipboard.js`：管理剪贴板，实现复制（Ctrl+C）和粘贴（Ctrl+V）
 - `useKeyboardShortcuts.js`：统一监听键盘事件，调用对应的处理函数
@@ -271,4 +254,9 @@ src/
 - `flowConfig.js`：存放 React Flow 组件的配置项（样式、交互行为等）
 
 
+### 简单记录
+写到后面越来越难写记录了，干脆直接写想法和干了什么，不写标题了
 
+然后我现在给拖拽时的连接线也添加了样式，和创建后的连接线样式保持一致
+
+现在发现个问题，节点盒的节点拖拽即使没有离开节点盒，依旧会被创建到画布中，我猜测应该是因为背后也是画布，都在这个区域了，我应该让节点盒和画布并列排布

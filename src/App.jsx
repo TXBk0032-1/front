@@ -1,9 +1,9 @@
 /**
  * App.jsx - 应用主入口
- * 
+ *
  * 这是整个蓝图编辑器的核心文件
  * 但它本身不包含太多逻辑，主要是"组装"各个模块
- * 
+ *
  * 架构说明：
  * - hooks/ 目录：各种功能的 Hook（历史记录、剪贴板、快捷键）
  * - utils/ 目录：工具函数（节点工厂）
@@ -38,7 +38,11 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { createNode } from "./utils/createNode";
 
 // 配置
-import { initialNodes, initialEdges, INITIAL_NODE_ID } from "./config/initialData";
+import {
+  initialNodes,
+  initialEdges,
+  INITIAL_NODE_ID,
+} from "./config/initialData";
 import {
   defaultEdgeOptions,
   panOnDrag,
@@ -49,15 +53,14 @@ import {
   containerStyle,
 } from "./config/flowConfig";
 
-
 // ========== 画布组件 ==========
 
 /**
  * FlowCanvas - React Flow 画布
- * 
+ *
  * 这是一个内部组件，必须放在 ReactFlowProvider 里面
  * 因为它用到了 useReactFlow 这个 hook
- * 
+ *
  * 主要职责：
  * 1. 管理节点和连线的状态
  * 2. 处理各种交互事件
@@ -83,12 +86,19 @@ function FlowCanvas() {
 
   // 历史记录（撤销/重做）
   const { saveToHistory, undo, redo, isUndoingRef } = useHistory(
-    nodes, edges, setNodes, setEdges
+    nodes,
+    edges,
+    setNodes,
+    setEdges
   );
 
   // 剪贴板（复制/粘贴）
   const { copy, paste, trackMousePosition } = useClipboard(
-    nodes, setNodes, createNode, nodeIdCounter, saveToHistory
+    nodes,
+    setNodes,
+    createNode,
+    nodeIdCounter,
+    saveToHistory
   );
 
   // 键盘快捷键
@@ -98,21 +108,28 @@ function FlowCanvas() {
 
   /**
    * 处理新建连线
-   * 
+   *
    * 规则：输入端口只能接受一个连接
    * 如果目标端口已有连接，先断开旧连接，再建立新连接
    */
-  const onConnect = useCallback((params) => {
-    saveToHistory();
-    setEdges((eds) => {
-      // 先删除目标端口的旧连接
-      const filtered = eds.filter(
-        (e) => !(e.target === params.target && e.targetHandle === params.targetHandle)
-      );
-      // 再添加新连接
-      return addEdge(params, filtered);
-    });
-  }, [setEdges, saveToHistory]);
+  const onConnect = useCallback(
+    (params) => {
+      saveToHistory();
+      setEdges((eds) => {
+        // 先删除目标端口的旧连接
+        const filtered = eds.filter(
+          (e) =>
+            !(
+              e.target === params.target &&
+              e.targetHandle === params.targetHandle
+            )
+        );
+        // 再添加新连接
+        return addEdge(params, filtered);
+      });
+    },
+    [setEdges, saveToHistory]
+  );
 
   // ---------- 连线重连（拔出连接线效果） ----------
 
@@ -125,20 +142,26 @@ function FlowCanvas() {
   }, []);
 
   // 重连成功
-  const onReconnect = useCallback((oldEdge, newConnection) => {
-    edgeReconnectSuccessful.current = true;
-    saveToHistory();
-    setEdges((els) => reconnectEdge(oldEdge, newConnection, els));
-  }, [setEdges, saveToHistory]);
+  const onReconnect = useCallback(
+    (oldEdge, newConnection) => {
+      edgeReconnectSuccessful.current = true;
+      saveToHistory();
+      setEdges((els) => reconnectEdge(oldEdge, newConnection, els));
+    },
+    [setEdges, saveToHistory]
+  );
 
   // 重连结束（如果没成功连到新端口，就删除这条线）
-  const onReconnectEnd = useCallback((_, edge) => {
-    if (!edgeReconnectSuccessful.current) {
-      saveToHistory();
-      setEdges((eds) => eds.filter((e) => e.id !== edge.id));
-    }
-    edgeReconnectSuccessful.current = true;
-  }, [setEdges, saveToHistory]);
+  const onReconnectEnd = useCallback(
+    (_, edge) => {
+      if (!edgeReconnectSuccessful.current) {
+        saveToHistory();
+        setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+      }
+      edgeReconnectSuccessful.current = true;
+    },
+    [setEdges, saveToHistory]
+  );
 
   // ---------- 状态变化处理 ----------
 
@@ -146,33 +169,39 @@ function FlowCanvas() {
    * 处理节点变化
    * 在适当的时机保存历史记录
    */
-  const handleNodesChange = useCallback((changes) => {
-    // 检查是否有需要记录的变化
-    const hasPositionChange = changes.some(
-      (c) => c.type === "position" && c.dragging === false
-    );
-    const hasRemove = changes.some((c) => c.type === "remove");
+  const handleNodesChange = useCallback(
+    (changes) => {
+      // 检查是否有需要记录的变化
+      const hasPositionChange = changes.some(
+        (c) => c.type === "position" && c.dragging === false
+      );
+      const hasRemove = changes.some((c) => c.type === "remove");
 
-    // 有实质性变化时保存历史
-    if ((hasPositionChange || hasRemove) && !isUndoingRef.current) {
-      saveToHistory();
-    }
+      // 有实质性变化时保存历史
+      if ((hasPositionChange || hasRemove) && !isUndoingRef.current) {
+        saveToHistory();
+      }
 
-    onNodesChange(changes);
-  }, [onNodesChange, saveToHistory, isUndoingRef]);
+      onNodesChange(changes);
+    },
+    [onNodesChange, saveToHistory, isUndoingRef]
+  );
 
   /**
    * 处理连线变化
    */
-  const handleEdgesChange = useCallback((changes) => {
-    const hasRemove = changes.some((c) => c.type === "remove");
+  const handleEdgesChange = useCallback(
+    (changes) => {
+      const hasRemove = changes.some((c) => c.type === "remove");
 
-    if (hasRemove && !isUndoingRef.current) {
-      saveToHistory();
-    }
+      if (hasRemove && !isUndoingRef.current) {
+        saveToHistory();
+      }
 
-    onEdgesChange(changes);
-  }, [onEdgesChange, saveToHistory, isUndoingRef]);
+      onEdgesChange(changes);
+    },
+    [onEdgesChange, saveToHistory, isUndoingRef]
+  );
 
   // ---------- 拖拽创建节点 ----------
 
@@ -180,25 +209,28 @@ function FlowCanvas() {
    * 处理拖拽放置
    * 用户从节点面板拖拽节点到画布时触发
    */
-  const onDrop = useCallback((event) => {
-    event.preventDefault();
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
 
-    // 获取拖拽的节点类型
-    const nodeKey = event.dataTransfer.getData("application/reactflow");
-    if (!nodeKey) return;
+      // 获取拖拽的节点类型
+      const nodeKey = event.dataTransfer.getData("application/reactflow");
+      if (!nodeKey) return;
 
-    // 转换坐标
-    const position = screenToFlowPosition({
-      x: event.clientX,
-      y: event.clientY,
-    });
+      // 转换坐标
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
 
-    // 创建新节点
-    saveToHistory();
-    const newId = `node-${nodeIdCounter.current++}`;
-    const newNode = createNode(newId, nodeKey, position);
-    setNodes((nds) => nds.concat(newNode));
-  }, [screenToFlowPosition, setNodes, saveToHistory]);
+      // 创建新节点
+      saveToHistory();
+      const newId = `node-${nodeIdCounter.current++}`;
+      const newNode = createNode(newId, nodeKey, position);
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [screenToFlowPosition, setNodes, saveToHistory]
+  );
 
   /**
    * 允许拖拽放置
@@ -248,7 +280,8 @@ function FlowCanvas() {
       nodeOrigin={nodeOrigin}
       colorMode={colorMode}
       fitView
-      defaultEdgeOptions={defaultEdgeOptions}
+      defaultEdgeOptions={defaultEdgeOptions} // 创建后的边缘样式
+      connectionLineStyle={defaultEdgeOptions.style} // 拖拽时的连接线
     >
       {/* 左侧节点面板 */}
       <NodeBox />
@@ -256,12 +289,11 @@ function FlowCanvas() {
   );
 }
 
-
 // ========== 主组件 ==========
 
 /**
  * App - 应用入口
- * 
+ *
  * ReactFlowProvider 是必须的，它提供了 React Flow 的上下文
  * 所有使用 useReactFlow 的组件都必须在它里面
  */
