@@ -23,8 +23,6 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-// ========== 自定义模块 ==========
-
 // 组件
 import BaseNode from "./components/BaseNode";
 import NodeBox from "./components/NodeBox";
@@ -290,7 +288,7 @@ function FlowCanvas() {
 
 // 画布容器样式：占据剩余空间
 const canvasContainerStyle = {
-  flex: 1,        // 占据剩余空间
+  flex: 1, // 占据剩余空间
   height: "100%",
 };
 
@@ -308,7 +306,7 @@ function App() {
     <div style={containerStyle}>
       {/* 左侧：节点面板 */}
       <NodeBox />
-      
+
       {/* 右侧：画布（占据剩余空间） */}
       <div style={canvasContainerStyle}>
         <ReactFlowProvider>
