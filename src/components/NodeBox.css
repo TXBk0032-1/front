@@ -1,0 +1,101 @@
+.node-box {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 200px;
+  height: 100%;
+  background-color: rgb(234, 239, 252);
+  flex-wrap: wrap;
+  padding: 20px;
+  gap: 10px;
+  user-select: none;
+}
+
+.node-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+
+
+
+
+/* 迁移如下 */
+.nodes-box {
+  width: 30%;
+  min-width: 180px;
+  max-width: 200px;
+  background-color: #eaeffc;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+  height: 100%;
+
+  direction: rtl;
+}
+
+
+.nodes-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 30px;
+  gap: 18px;
+
+  direction: ltr;
+}
+
+.group-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 滚动条 */
+.nodes-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nodes-box::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0);
+}
+
+.nodes-box::-webkit-scrollbar-thumb {
+  background: #aaa;
+}
+
+.nodes-box::-webkit-scrollbar-thumb:hover {
+  background: #8992EB;
+}
+
+
+/* 节点 */
+
+.node-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: fit-content;
+  flex-wrap: nowrap;
+  border-radius: 12px;
+  background-color: #8992eb;
+  padding: 8px 24px;
+  gap: 40px;
+  cursor: grab;
+  outline: #ffffff;
+  transition: opacity 0.2s, filter 0.2s, outline 0.2s, scale 0.2s;
+  width: fit-content;
+  font-size: 18px;
+  color: #fff;
+  word-break: keep-all;
+  white-space: nowrap;
+}
+
+.node-item:active {
+  cursor: grabbing;
+}
+
+.node-item:hover {
+  filter: brightness(1.1);
+}

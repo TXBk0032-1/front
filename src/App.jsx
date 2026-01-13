@@ -12,6 +12,7 @@ import "@xyflow/react/dist/style.css";
 
 // 导入自定义的通用节点组件
 import BaseNode from "./components/BaseNode";
+import NodeBox from "./components/NodeBox";
 
 // 导入节点注册表
 import { NODE_REGISTRY } from "./constants/nodeRegistry";
@@ -110,6 +111,7 @@ function App() {
           style: { strokeWidth: 3, stroke: "#fff" },
         }}
       >
+        <NodeBox />
         <Controls />
       </ReactFlow>
     </div>
