@@ -4,12 +4,62 @@
  * 这是画布左边的侧边栏，类似 Scratch 编辑器的积木盒
  * 用户可以从这里拖拽节点到画布上
  *
- * 注意：这个组件现在是独立的侧边栏，不再是画布内的 Panel
- * 这样拖拽节点时，只有拖到画布区域才会创建节点
+ * 结构（类似Scratch）：
+ * - 左边是分类栏（CategoryBar），竖向排列的色块，点击可以筛选节点
+ * - 右边是节点列表，根据选中的分类显示对应的节点
  */
 
+import { useState } from "react";
 import { getNodeConfig, getAllCategories } from "../constants/nodeRegistry";
 import "./NodeBox.css";
+
+// ========== 分类栏 ==========
+
+/**
+ * CategoryBar - 分类筛选栏（竖向色块）
+ *
+ * 类似Scratch左侧的分类色块，点击可以切换筛选
+ * 选中"全部"时显示所有节点，选中某个分类时只显示该分类的节点
+ *
+ * @param {Array} categories - 所有分类数据 [[key, data], ...]
+ * @param {string|null} selectedCategory - 当前选中的分类key，null表示全部
+ * @param {Function} onSelectCategory - 选中分类时的回调
+ */
+const CategoryBar = ({ categories, selectedCategory, onSelectCategory }) => {
+  // "全部"按钮的默认颜色
+  const allColor = "#666";
+
+  return (
+    <div className="category-bar">
+      {/* "全部"按钮 */}
+      <div
+        className={`category-item ${selectedCategory === null ? "active" : ""}`}
+        style={{
+          "--category-color": allColor,
+          color: selectedCategory === null ? "#fff" : allColor,
+        }}
+        onClick={() => onSelectCategory(null)}
+      >
+        全部
+      </div>
+
+      {/* 各分类按钮 - 用CSS变量设置分类颜色 */}
+      {categories.map(([key, data]) => (
+        <div
+          key={key}
+          className={`category-item ${selectedCategory === key ? "active" : ""}`}
+          style={{
+            "--category-color": data.color,
+            color: selectedCategory === key ? "#fff" : data.color,
+          }}
+          onClick={() => onSelectCategory(key)}
+        >
+          {data.label}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 // ========== 单个节点项 ==========
 
@@ -78,17 +128,37 @@ const NodeGroup = ({ groupData }) => {
  * NodeBox - 节点面板主体
  *
  * 独立的侧边栏组件，和画布左右并列
- * 遍历所有分类，渲染出完整的节点列表
+ * 包含分类栏和节点列表两部分
  */
 const NodeBox = () => {
   // 获取所有分类数据
   const categories = getAllCategories();
 
+  // 当前选中的分类，null 表示显示全部
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // 根据选中的分类筛选要显示的分类
+  // 如果选中了某个分类，只显示那一个；否则显示全部
+  const filteredCategories =
+    selectedCategory === null
+      ? categories
+      : categories.filter(([key]) => key === selectedCategory);
+
   return (
     <div className="node-box">
-      {categories.map(([groupKey, groupData]) => (
-        <NodeGroup key={groupKey} groupData={groupData} />
-      ))}
+      {/* 分类筛选栏 */}
+      <CategoryBar
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+      />
+
+      {/* 节点列表区域 */}
+      <div className="node-list">
+        {filteredCategories.map(([groupKey, groupData]) => (
+          <NodeGroup key={groupKey} groupData={groupData} />
+        ))}
+      </div>
     </div>
   );
 };

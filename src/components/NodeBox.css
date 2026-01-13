@@ -1,33 +1,97 @@
 /**
  * 节点面板样式
  *
- * 节点面板是独立的侧边栏，和画布左右并列
- * 不再是画布内的浮动面板
+ * 布局结构（类似Scratch）：
+ * [分类栏] [节点列表] [画布]
+ *   竖向      竖向
+ *
+ * 分类栏和节点列表左右并排，整体作为侧边栏
  */
 
 .node-box {
+  /* 布局：横向排列（分类栏 + 节点列表） */
+  display: flex;
+  flex-direction: row;
+  
+  /* 尺寸 */
+  height: 100%;
+  
+  /* 其他 */
+  user-select: none;
+}
+
+/* ========== 分类栏（左侧竖向色块） ========== */
+
+.category-bar {
+  width: fit-content;
+  background-color: #f6f9fe;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  margin: 4px;
+  border-radius: 8px;
+  position: relative;
+  transition: all 0.1s ease-in-out;
+  
+  /* 文字样式 */
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.category-item:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  scale: 1.1;
+}
+
+.category-item:active {
+  scale: 0.9;
+}
+
+.category-item.active {
+  background-color: var(--category-color);
+  color: white;
+}
+
+.category-item.active:hover {
+  scale: 1;
+}
+
+/* ========== 节点列表区域（右侧） ========== */
+
+.node-list {
   /* 布局 */
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
+  gap: 20px;
   
   /* 尺寸 */
-  width: 200px;
-  min-width: 200px;  /* 防止被压缩 */
-  height: 100%;
+  width: 160px;
+  min-width: 160px;
+  
+  /* 内边距 */
+  padding: 16px;
   
   /* 外观 */
   background-color: rgb(234, 239, 252);
-  padding: 20px;
   
   /* 滚动 */
   overflow-y: auto;
   overflow-x: hidden;
   
-  /* 其他 */
-  user-select: none;
+  /* 占据剩余高度 */
+  height: 100%;
 }
+
+/* ========== 节点分组 ========== */
 
 .node-group {
   display: flex;
