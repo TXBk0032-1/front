@@ -17,8 +17,8 @@ export const NODE_REGISTRY = {
   nodes: {
     node1: {
       label: "节点1",
-      inputs: [{ id: "in", label: "输入" }],
-      outputs: [{ id: "out", label: "输出" }],
+      inputs: [{ id: "in", label: "" }],
+      outputs: [{ id: "out", label: "" }],
       params: {
         param1: { label: "参数1", type: "number", default: 1 },
         param2: { label: "参数2", type: "number", default: 2 },

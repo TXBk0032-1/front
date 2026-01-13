@@ -1,4 +1,5 @@
 import { Handle, Position } from "@xyflow/react";
+import { Button } from '@heroui/react';
 import "./BaseNode.css";
 const PortHandle = ({ type, position, id, label }) => (
   <div className="port-item">
@@ -18,7 +19,7 @@ const PortHandle = ({ type, position, id, label }) => (
 );
 
 const BaseNode = ({ data: { color = "rgb(137, 146, 235)", label, inputs = [], outputs = [] } }) => (
-  <div className="container" style={{ background: color }}>
+  <Button className="container" style={{ background: color }}>
     <div className="port-container">
       {inputs.map(({ id, label }, i) => (
         <PortHandle key={`input-${i}`} type="target" position={Position.Left} id={id} label={label} />
@@ -32,7 +33,7 @@ const BaseNode = ({ data: { color = "rgb(137, 146, 235)", label, inputs = [], ou
         <PortHandle key={`output-${i}`} type="source" position={Position.Right} id={id} label={label} />
       ))}
     </div>
-  </div>
+  </Button>
 );
 
 

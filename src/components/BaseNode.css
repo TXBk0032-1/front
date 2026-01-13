@@ -1,9 +1,8 @@
 .container {
   background: rgb(137, 146, 235);
   color: white;
-  padding: 10px;
+  padding: 16px 10px;
   border-radius: 10px;
-  min-width: 150px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -17,7 +16,6 @@
 
 .port-item {
   position: relative;
-  margin-bottom: 5px;
 }
 
 .handle {
