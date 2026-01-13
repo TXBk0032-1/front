@@ -242,8 +242,33 @@ yarn add @xyflow/react
 - 历史记录功能也要有，按下ctrl+z可以回退到上一步操作，按下ctrl+y可以重做上一步操作
 - 增加复制功能，按下ctrl+c可以复制选中的节点，按下ctrl+v可以在鼠标位置粘贴复制的节点
 
+### 10. 代码模块化重构
 
+App.jsx 代码越写越长，嵌套层级也越来越深，阅读起来很费劲。这次做了一次大规模的模块化拆分，把不同功能的代码分离到独立文件中。
 
+**新增的文件结构：**
+
+```
+src/
+├── hooks/                    # 自定义 Hook（功能逻辑）
+│   ├── useHistory.js         # 撤销/重做功能
+│   ├── useClipboard.js       # 复制/粘贴功能
+│   └── useKeyboardShortcuts.js # 键盘快捷键监听
+├── utils/                    # 工具函数
+│   └── createNode.js         # 创建节点对象的函数
+├── config/                   # 配置文件
+│   ├── initialData.js        # 画布初始数据（默认节点和连线）
+│   └── flowConfig.js         # React Flow 的各种配置项
+```
+
+**各文件职责说明：**
+
+- `useHistory.js`：管理历史记录栈，实现撤销（Ctrl+Z）和重做（Ctrl+Y）
+- `useClipboard.js`：管理剪贴板，实现复制（Ctrl+C）和粘贴（Ctrl+V）
+- `useKeyboardShortcuts.js`：统一监听键盘事件，调用对应的处理函数
+- `createNode.js`：根据节点类型创建 React Flow 需要的节点对象
+- `initialData.js`：存放画布启动时默认显示的节点和连线
+- `flowConfig.js`：存放 React Flow 组件的配置项（样式、交互行为等）
 
 
 
