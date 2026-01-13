@@ -192,4 +192,40 @@ yarn add @xyflow/react
 - 这样拖拽生成的节点会以鼠标位置为中心，而不是左上角对齐鼠标
 - 好处是动态适应不同大小的节点，无需手动计算偏移量
 
+### 8. 代码重构优化
+
+代码写到一半发现有点乱了，嵌套太多，可读性下降。按照项目原则（KISS、DRY、面向理解编程）进行了一次整体重构。
+
+**优化目标：**
+- 减少代码嵌套层级
+- 增加大白话注释，让代码更易理解
+- 提高模块化程度，松散耦合
+- 消除重复逻辑
+
+**nodeRegistry.js 优化：**
+- 添加了4个辅助函数，把常用的查询逻辑封装起来：
+  - `getNodeConfig(nodeKey)` - 根据节点ID获取配置
+  - `findCategoryByNode(nodeKey)` - 根据节点ID找到所属分类
+  - `getNodeColor(nodeKey)` - 根据节点ID获取主题色
+  - `getAllCategories()` - 获取所有分类（返回数组方便遍历）
+- 这样其他文件就不用每次都写一堆查找逻辑了
+
+**BaseNode.jsx 优化：**
+- 把原来的 `PortHandle` 组件拆成了 `InputPort` 和 `OutputPort` 两个独立组件
+- 原来用条件渲染（`type === 'target'`）来区分输入输出，嵌套了两层
+- 现在直接分成两个组件，各管各的，代码更清晰
+- 把 data 的解构从参数位置移到函数体内，设置了默认值，更直观
+
+**NodeBox.jsx 优化：**
+- 使用新增的辅助函数 `getNodeConfig()` 和 `getAllCategories()`
+- 给每个组件都加了大白话注释，解释它是干嘛的
+- 删除了没用到的 `groupKey` 参数
+
+**App.jsx 优化：**
+- 把 `createNodeFromRegistry` 函数简化为 `createNode`，内部调用辅助函数
+- 原来查找节点颜色要写一大段 `Object.keys().find()` 的逻辑，现在一行 `getNodeColor()` 搞定
+- 把初始连线数据压缩成单行，减少视觉噪音
+- 把连线默认样式抽成常量 `defaultEdgeStyle`
+- 给每个函数和代码块都加了注释，用分隔线划分不同区域
+
 
