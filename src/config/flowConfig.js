@@ -78,9 +78,11 @@ export const colorMode = "light";
 
 /**
  * 应用容器的样式
- * 撑满整个屏幕
+ * 使用 flex 布局，让节点面板和画布左右并列
  */
 export const containerStyle = {
+  display: "flex",        // 左右并列布局
+  flexDirection: "row",
   width: "100vw",
   height: "100vh",
   background: "#e2e9faff",

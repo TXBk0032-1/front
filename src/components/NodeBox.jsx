@@ -1,11 +1,13 @@
 /**
  * NodeBox - 节点面板组件
  *
- * 这是画布左边的那个面板，类似 Scratch 编辑器的积木盒
+ * 这是画布左边的侧边栏，类似 Scratch 编辑器的积木盒
  * 用户可以从这里拖拽节点到画布上
+ *
+ * 注意：这个组件现在是独立的侧边栏，不再是画布内的 Panel
+ * 这样拖拽节点时，只有拖到画布区域才会创建节点
  */
 
-import { Panel } from "@xyflow/react";
 import { getNodeConfig, getAllCategories } from "../constants/nodeRegistry";
 import "./NodeBox.css";
 
@@ -75,7 +77,7 @@ const NodeGroup = ({ groupData }) => {
 /**
  * NodeBox - 节点面板主体
  *
- * 使用 React Flow 的 Panel 组件，固定在画布左上角
+ * 独立的侧边栏组件，和画布左右并列
  * 遍历所有分类，渲染出完整的节点列表
  */
 const NodeBox = () => {
@@ -83,11 +85,11 @@ const NodeBox = () => {
   const categories = getAllCategories();
 
   return (
-    <Panel position="top-left" className="node-box">
+    <div className="node-box">
       {categories.map(([groupKey, groupData]) => (
         <NodeGroup key={groupKey} groupData={groupData} />
       ))}
-    </Panel>
+    </div>
   );
 };
 

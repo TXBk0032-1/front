@@ -1,14 +1,31 @@
+/**
+ * 节点面板样式
+ *
+ * 节点面板是独立的侧边栏，和画布左右并列
+ * 不再是画布内的浮动面板
+ */
+
 .node-box {
-  margin: 0;
+  /* 布局 */
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  width: 200px;
-  height: 100%;
-  background-color: rgb(234, 239, 252);
-  flex-wrap: wrap;
-  padding: 20px;
   gap: 10px;
+  
+  /* 尺寸 */
+  width: 200px;
+  min-width: 200px;  /* 防止被压缩 */
+  height: 100%;
+  
+  /* 外观 */
+  background-color: rgb(234, 239, 252);
+  padding: 20px;
+  
+  /* 滚动 */
+  overflow-y: auto;
+  overflow-x: hidden;
+  
+  /* 其他 */
   user-select: none;
 }
 

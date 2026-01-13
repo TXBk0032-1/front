@@ -6,7 +6,7 @@
  *
  * 架构说明：
  * - hooks/ 目录：各种功能的 Hook（历史记录、剪贴板、快捷键）
- * - utils/ 目录：工具函数（节点工厂）
+ * - utils/ 目录：工具函数（创建节点）
  * - config/ 目录：配置文件（初始数据、Flow配置）
  * - components/ 目录：UI组件（节点、面板）
  */
@@ -282,17 +282,23 @@ function FlowCanvas() {
       fitView
       defaultEdgeOptions={defaultEdgeOptions} // 创建后的边缘样式
       connectionLineStyle={defaultEdgeOptions.style} // 拖拽时的连接线
-    >
-      {/* 左侧节点面板 */}
-      <NodeBox />
-    </ReactFlow>
+    />
   );
 }
 
 // ========== 主组件 ==========
 
+// 画布容器样式：占据剩余空间
+const canvasContainerStyle = {
+  flex: 1,        // 占据剩余空间
+  height: "100%",
+};
+
 /**
  * App - 应用入口
+ *
+ * 布局结构：左边是节点面板，右边是画布
+ * 两者左右并列，互不重叠
  *
  * ReactFlowProvider 是必须的，它提供了 React Flow 的上下文
  * 所有使用 useReactFlow 的组件都必须在它里面
@@ -300,9 +306,15 @@ function FlowCanvas() {
 function App() {
   return (
     <div style={containerStyle}>
-      <ReactFlowProvider>
-        <FlowCanvas />
-      </ReactFlowProvider>
+      {/* 左侧：节点面板 */}
+      <NodeBox />
+      
+      {/* 右侧：画布（占据剩余空间） */}
+      <div style={canvasContainerStyle}>
+        <ReactFlowProvider>
+          <FlowCanvas />
+        </ReactFlowProvider>
+      </div>
     </div>
   );
 }
