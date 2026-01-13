@@ -122,12 +122,13 @@ const OutputPort = ({ id, label }) => (
 
 /**
  * BaseNode - 节点主体
- * 
+ *
  * @param {Object} data - 节点数据，从 React Flow 传入
  * @param {string} data.color - 节点背景色
  * @param {string} data.label - 节点标题
  * @param {Array} data.inputs - 输入端口列表
  * @param {Array} data.outputs - 输出端口列表
+ * @param {Function} data.onDoubleClick - 双击回调，用于触发重命名
  * @param {string} id - 节点ID，从 React Flow 传入
  */
 const BaseNode = ({ data, id }) => {
@@ -137,11 +138,31 @@ const BaseNode = ({ data, id }) => {
     label = "未命名节点",
     inputs = [],
     outputs = [],
+    onDoubleClick,
   } = data;
+
+  /**
+   * 处理双击事件
+   * 双击节点时触发重命名弹窗
+   */
+  const handleDoubleClick = (event) => {
+    // 阻止事件冒泡，避免触发其他事件
+    event.stopPropagation();
+    
+    // 调用父组件传入的回调函数
+    if (onDoubleClick) {
+      onDoubleClick(id);
+    }
+  };
 
   return (
     // 这里用 Button 组件是为了实现点击反馈效果，仅此而已
-    <Button className="container" style={{ background: color }}>
+    // 添加 onDoubleClick 事件处理双击重命名
+    <Button
+      className="container"
+      style={{ background: color }}
+      onDoubleClick={handleDoubleClick}
+    >
       {/* 左侧：输入端口区域 */}
       <div className="port-container">
         {inputs.map((port, index) => (

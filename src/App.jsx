@@ -11,7 +11,7 @@
  * - components/ 目录：UI组件（节点、面板）
  */
 
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import {
   ReactFlow,
   useNodesState,
@@ -26,6 +26,8 @@ import "@xyflow/react/dist/style.css";
 // 组件
 import BaseNode from "./components/BaseNode";
 import NodeBox from "./components/NodeBox";
+import NodeContextMenu from "./components/NodeContextMenu";
+import RenameModal from "./components/RenameModal";
 
 // Hooks
 import useHistory from "./hooks/useHistory";
@@ -79,6 +81,16 @@ function FlowCanvas() {
 
   // 节点ID计数器
   const nodeIdCounter = useRef(INITIAL_NODE_ID);
+
+  // ---------- 右键菜单状态 ----------
+  
+  // 右键菜单状态：null 表示关闭，否则包含位置和目标节点信息
+  const [contextMenu, setContextMenu] = useState(null);
+  
+  // ---------- 重命名弹窗状态 ----------
+  
+  // 重命名弹窗状态：null 表示关闭，否则包含目标节点信息
+  const [renameTarget, setRenameTarget] = useState(null);
 
   // ---------- 功能模块 ----------
 
@@ -239,48 +251,276 @@ function FlowCanvas() {
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  // ---------- 其他事件 ----------
+  // ---------- 右键菜单处理 ----------
 
-  // 禁用右键菜单（因为右键用于移动画布）
-  const onContextMenu = useCallback((event) => {
+  /**
+   * 处理节点右键点击
+   * 显示右键菜单
+   */
+  const onNodeContextMenu = useCallback((event, node) => {
+    // 阻止默认右键菜单
     event.preventDefault();
+    
+    // 设置右键菜单状态
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      nodeId: node.id,
+    });
   }, []);
+
+  /**
+   * 关闭右键菜单
+   */
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
+  /**
+   * 处理画布右键点击（非节点区域）
+   * 关闭右键菜单，不显示浏览器默认菜单
+   */
+  const onPaneContextMenu = useCallback((event) => {
+    event.preventDefault();
+    closeContextMenu();
+  }, [closeContextMenu]);
+
+  /**
+   * 处理画布左键点击（非节点区域）
+   * 关闭右键菜单
+   */
+  const onPaneClick = useCallback(() => {
+    closeContextMenu();
+  }, [closeContextMenu]);
+
+  /**
+   * 处理节点左键点击
+   * 关闭右键菜单
+   */
+  const onNodeClick = useCallback(() => {
+    closeContextMenu();
+  }, [closeContextMenu]);
+
+  // 监听 document 的点击事件，点击菜单外部时关闭菜单
+  useEffect(() => {
+    // 只有菜单打开时才需要监听
+    if (!contextMenu) return;
+
+    const handleClickOutside = (event) => {
+      // 检查点击是否在菜单内部
+      const menuElement = document.querySelector(".context-menu");
+      if (menuElement && !menuElement.contains(event.target)) {
+        closeContextMenu();
+      }
+    };
+
+    // 使用捕获阶段监听，这样即使子元素阻止了事件冒泡也能捕获到
+    // 同时监听 mousedown 和 click，确保能捕获到所有点击
+    document.addEventListener("mousedown", handleClickOutside, true);
+    document.addEventListener("click", handleClickOutside, true);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside, true);
+      document.removeEventListener("click", handleClickOutside, true);
+    };
+  }, [contextMenu, closeContextMenu]);
+
+  // ---------- 右键菜单操作 ----------
+
+  /**
+   * 复制并粘贴节点
+   * 复制当前右键点击的节点，并立即粘贴到鼠标位置
+   */
+  const handleCopyPaste = useCallback(() => {
+    if (!contextMenu) return;
+    
+    // 找到目标节点
+    const targetNode = nodes.find((n) => n.id === contextMenu.nodeId);
+    if (!targetNode) return;
+    
+    // 保存历史
+    saveToHistory();
+    
+    // 创建新节点（在原节点右下方偏移一点）
+    const newId = `node-${nodeIdCounter.current++}`;
+    const newPosition = {
+      x: targetNode.position.x + 50,
+      y: targetNode.position.y + 50,
+    };
+    const newNode = createNode(newId, targetNode.data.nodeKey, newPosition);
+    
+    // 如果原节点有自定义名称，也复制过来
+    if (targetNode.data.customLabel) {
+      newNode.data.customLabel = targetNode.data.customLabel;
+      newNode.data.label = targetNode.data.customLabel;
+    }
+    
+    setNodes((nds) => nds.concat(newNode));
+  }, [contextMenu, nodes, saveToHistory, setNodes]);
+
+  /**
+   * 删除节点
+   * 删除当前右键点击的节点
+   */
+  const handleDeleteNode = useCallback(() => {
+    if (!contextMenu) return;
+    
+    saveToHistory();
+    setNodes((nds) => nds.filter((n) => n.id !== contextMenu.nodeId));
+    // 同时删除相关的连线
+    setEdges((eds) =>
+      eds.filter(
+        (e) => e.source !== contextMenu.nodeId && e.target !== contextMenu.nodeId
+      )
+    );
+  }, [contextMenu, saveToHistory, setNodes, setEdges]);
+
+  /**
+   * 打开重命名弹窗
+   */
+  const handleOpenRename = useCallback(() => {
+    if (!contextMenu) return;
+    
+    // 找到目标节点
+    const targetNode = nodes.find((n) => n.id === contextMenu.nodeId);
+    if (!targetNode) return;
+    
+    // 设置重命名目标
+    setRenameTarget({
+      nodeId: targetNode.id,
+      currentName: targetNode.data.customLabel || targetNode.data.label,
+    });
+  }, [contextMenu, nodes]);
+
+  // ---------- 重命名处理 ----------
+
+  /**
+   * 关闭重命名弹窗
+   */
+  const closeRenameModal = useCallback(() => {
+    setRenameTarget(null);
+  }, []);
+
+  /**
+   * 确认重命名
+   * 更新节点的显示名称
+   */
+  const handleRenameConfirm = useCallback(
+    (newName) => {
+      if (!renameTarget) return;
+      
+      saveToHistory();
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id === renameTarget.nodeId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                label: newName,
+                customLabel: newName, // 标记为自定义名称
+              },
+            };
+          }
+          return node;
+        })
+      );
+    },
+    [renameTarget, saveToHistory, setNodes]
+  );
+
+  /**
+   * 通过节点ID打开重命名弹窗
+   * 供 BaseNode 双击时调用
+   */
+  const openRenameByNodeId = useCallback(
+    (nodeId) => {
+      const targetNode = nodes.find((n) => n.id === nodeId);
+      if (!targetNode) return;
+      
+      setRenameTarget({
+        nodeId: targetNode.id,
+        currentName: targetNode.data.customLabel || targetNode.data.label,
+      });
+    },
+    [nodes]
+  );
+
+  // ---------- 传递给节点的数据 ----------
+
+  // 把 openRenameByNodeId 函数注入到每个节点的 data 中
+  // 这样节点组件就可以调用它来打开重命名弹窗
+  const nodesWithRename = useMemo(() => {
+    return nodes.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        onDoubleClick: openRenameByNodeId,
+      },
+    }));
+  }, [nodes, openRenameByNodeId]);
 
   // ---------- 渲染 ----------
 
   return (
-    <ReactFlow
-      // 数据
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={nodeTypes}
-      // 状态变化
-      onNodesChange={handleNodesChange}
-      onEdgesChange={handleEdgesChange}
-      onConnect={onConnect}
-      // 拖拽创建
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-      // 鼠标追踪（用于粘贴定位）
-      onMouseMove={trackMousePosition}
-      // 右键菜单
-      onContextMenu={onContextMenu}
-      // 连线重连
-      onReconnect={onReconnect}
-      onReconnectStart={onReconnectStart}
-      onReconnectEnd={onReconnectEnd}
-      // 交互配置
-      panOnDrag={panOnDrag}
-      selectionOnDrag
-      selectionMode={selectionMode}
-      deleteKeyCode={deleteKeyCode}
-      // 外观配置
-      nodeOrigin={nodeOrigin}
-      colorMode={colorMode}
-      fitView
-      defaultEdgeOptions={defaultEdgeOptions} // 创建后的边缘样式
-      connectionLineStyle={defaultEdgeOptions.style} // 拖拽时的连接线
-    />
+    <>
+      <ReactFlow
+        // 数据
+        nodes={nodesWithRename}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        // 状态变化
+        onNodesChange={handleNodesChange}
+        onEdgesChange={handleEdgesChange}
+        onConnect={onConnect}
+        // 拖拽创建
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        // 鼠标追踪（用于粘贴定位）
+        onMouseMove={trackMousePosition}
+        // 右键菜单
+        onNodeContextMenu={onNodeContextMenu}
+        onPaneContextMenu={onPaneContextMenu}
+        // 左键点击关闭菜单
+        onPaneClick={onPaneClick}
+        onNodeClick={onNodeClick}
+        // 连线重连
+        onReconnect={onReconnect}
+        onReconnectStart={onReconnectStart}
+        onReconnectEnd={onReconnectEnd}
+        // 交互配置
+        panOnDrag={panOnDrag}
+        selectionOnDrag
+        selectionMode={selectionMode}
+        deleteKeyCode={deleteKeyCode}
+        // 外观配置
+        nodeOrigin={nodeOrigin}
+        colorMode={colorMode}
+        fitView
+        defaultEdgeOptions={defaultEdgeOptions} // 创建后的边缘样式
+        connectionLineStyle={defaultEdgeOptions.style} // 拖拽时的连接线
+      />
+
+      {/* 节点右键菜单 */}
+      {contextMenu && (
+        <NodeContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onCopyPaste={handleCopyPaste}
+          onDelete={handleDeleteNode}
+          onRename={handleOpenRename}
+          onClose={closeContextMenu}
+        />
+      )}
+
+      {/* 重命名弹窗 */}
+      <RenameModal
+        isOpen={renameTarget !== null}
+        onClose={closeRenameModal}
+        currentName={renameTarget?.currentName || ""}
+        onConfirm={handleRenameConfirm}
+      />
+    </>
   );
 }
 
