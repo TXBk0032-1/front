@@ -1,10 +1,11 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import {
   ReactFlow,
   useNodesState,
   useEdgesState,
   addEdge,
-  Controls,
+  useReactFlow,
+  ReactFlowProvider,
 } from "@xyflow/react";
 
 // 导入 React Flow 的基础样式
@@ -75,7 +76,8 @@ const initialEdges = [
   },
 ];
 
-function App() {
+// 内部组件，使用useReactFlow
+function FlowCanvas() {
   // 定义自定义节点类型
   const nodeTypes = useMemo(
     () => ({
@@ -85,38 +87,86 @@ function App() {
   );
 
   // 使用 React Flow 提供的 Hook 管理节点和连线的状态
-  // setNodes 暂时没用到，所以用逗号跳过以避免 ESLint 报错
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  
+  // 用于获取画布坐标转换的API
+  const { screenToFlowPosition } = useReactFlow();
+  
+  // 用于生成唯一节点ID
+  const nodeIdCounter = useRef(5);
 
   // 处理连线事件
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
+  
+  // 处理拖拽放置事件
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+      
+      // 获取拖拽的节点ID
+      const nodeKey = event.dataTransfer.getData("application/reactflow");
+      if (!nodeKey) return;
+      
+      // 将屏幕坐标转换为画布坐标
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      
+      // 生成新节点
+      const newNodeId = `node-${nodeIdCounter.current++}`;
+      const newNode = createNodeFromRegistry(newNodeId, nodeKey, position);
+      
+      // 添加到画布
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [screenToFlowPosition, setNodes]
+  );
+  
+  // 允许拖拽放置
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
 
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+      nodeTypes={nodeTypes}
+      nodeOrigin={[0.5, 0.5]}
+      colorMode="light"
+      fitView
+      defaultEdgeOptions={{
+        style: { strokeWidth: 3, stroke: "#fff" },
+      }}
+    >
+      <NodeBox />
+    </ReactFlow>
+  );
+}
+
+// 主组件，使用ReactFlowProvider包裹
+function App() {
   return (
     // React Flow 需要一个有明确宽高的容器
     <div style={styles.container}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        colorMode="light"
-        fitView
-        defaultEdgeOptions={{
-          style: { strokeWidth: 3, stroke: "#fff" },
-        }}
-      >
-        <NodeBox />
-        <Controls />
-      </ReactFlow>
+      <ReactFlowProvider>
+        <FlowCanvas />
+      </ReactFlowProvider>
     </div>
   );
 }
+
 const styles = {
   container: {
     width: "100vw",
@@ -124,4 +174,5 @@ const styles = {
     background: "#e2e9faff",
   },
 };
+
 export default App;

@@ -4,8 +4,20 @@ import "./NodeBox.css";
 
 const NodeItem = ({ nodeId, color }) => {
   const node = NODE_REGISTRY.nodes[nodeId] || {};
+  
+  // 拖拽开始时，将节点ID存储到dataTransfer中
+  const onDragStart = (event) => {
+    event.dataTransfer.setData("application/reactflow", nodeId);
+    event.dataTransfer.effectAllowed = "move";
+  };
+  
   return (
-    <div className="node-item" style={{ background: color }}>
+    <div
+      className="node-item"
+      style={{ background: color }}
+      draggable
+      onDragStart={onDragStart}
+    >
       {node.label || nodeId}
     </div>
   );
