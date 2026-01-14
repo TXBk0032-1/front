@@ -1,5 +1,5 @@
 /**
- * NodeBox - 节点面板组件
+ * NodeBox.jsx - 节点面板组件
  * 
  * 画布左边的侧边栏，类似 Scratch 编辑器的积木盒
  * 用户可以从这里拖拽节点到画布上
@@ -14,49 +14,53 @@ import { getNodeConfig, getAllCategories } from "../constants/nodeRegistry";    
 import "./NodeBox.css";                                                          // 样式
 
 
-// ==================== 分类栏组件 ====================
+// ========== 分类栏组件 ==========
 
 /**
  * CategoryBar - 分类筛选栏
  * 竖向排列的色块，点击切换筛选
  */
 const CategoryBar = ({ categories, selectedCategory, onSelectCategory }) => {
-  const allColor = "#666";                                                       // "全部"按钮的颜色
-
   return (
     <div className="category-bar">
       {/* "全部"按钮 */}
-      <div
-        className={`category-item ${selectedCategory === null ? "active" : ""}`} // 选中时添加 active 类
-        style={{
-          "--category-color": allColor,                                          // CSS变量：分类颜色
-          color: selectedCategory === null ? "#fff" : allColor,                  // 文字颜色
-        }}
-        onClick={() => onSelectCategory(null)}                                   // 点击选中"全部"
-      >
-        全部
-      </div>
+      <CategoryItem
+        label="全部"
+        color="#666"
+        isSelected={selectedCategory === null}
+        onClick={() => onSelectCategory(null)}
+      />
 
       {/* 各分类按钮 */}
       {categories.map(([key, data]) => (
-        <div
+        <CategoryItem
           key={key}
-          className={`category-item ${selectedCategory === key ? "active" : ""}`}
-          style={{
-            "--category-color": data.color,                                      // CSS变量：分类颜色
-            color: selectedCategory === key ? "#fff" : data.color,               // 文字颜色
-          }}
-          onClick={() => onSelectCategory(key)}                                  // 点击选中该分类
-        >
-          {data.label}                                                           {/* 分类名称 */}
-        </div>
+          label={data.label}
+          color={data.color}
+          isSelected={selectedCategory === key}
+          onClick={() => onSelectCategory(key)}
+        />
       ))}
     </div>
   );
 };
 
+/** 单个分类按钮 */
+const CategoryItem = ({ label, color, isSelected, onClick }) => (
+  <div
+    className={`category-item ${isSelected ? "active" : ""}`}                    // 选中时添加 active 类
+    style={{
+      "--category-color": color,                                                 // CSS变量：分类颜色
+      color: isSelected ? "#fff" : color,                                        // 文字颜色
+    }}
+    onClick={onClick}
+  >
+    {label}
+  </div>
+);
 
-// ==================== 节点项组件 ====================
+
+// ========== 节点项组件 ==========
 
 /**
  * NodeItem - 单个节点按钮
@@ -65,10 +69,6 @@ const CategoryBar = ({ categories, selectedCategory, onSelectCategory }) => {
 const NodeItem = ({ nodeId, color }) => {
   const config = getNodeConfig(nodeId);                                          // 获取节点配置
 
-  /**
-   * 拖拽开始
-   * 把节点ID存到 dataTransfer，画布放下时会读取
-   */
   const handleDragStart = (event) => {
     event.dataTransfer.setData("application/reactflow", nodeId);                 // 存储节点ID
     event.dataTransfer.effectAllowed = "move";                                   // 设置拖拽效果
@@ -87,7 +87,7 @@ const NodeItem = ({ nodeId, color }) => {
 };
 
 
-// ==================== 节点分组组件 ====================
+// ========== 节点分组组件 ==========
 
 /**
  * NodeGroup - 一组同类型的节点
@@ -107,19 +107,15 @@ const NodeGroup = ({ groupData }) => {
 };
 
 
-// ==================== 主组件 ====================
+// ========== 主组件 ==========
 
 /**
  * NodeBox - 节点面板主体
  */
 const NodeBox = () => {
-  const categories = getAllCategories();                                         // 获取所有分类
-  const [selectedCategory, setSelectedCategory] = useState(null);                // 当前选中的分类（null=全部）
-
-  // 根据选中的分类筛选要显示的分类
-  const filteredCategories = selectedCategory === null                           // 如果选中"全部"
-    ? categories                                                                 // 显示所有分类
-    : categories.filter(([key]) => key === selectedCategory);                    // 否则只显示选中的分类
+  const categories = getAllCategories();                                         // 第1步：获取所有分类
+  const [selectedCategory, setSelectedCategory] = useState(null);                // 第2步：初始化选中状态（null=全部）
+  const filteredCategories = filterCategories(categories, selectedCategory);     // 第3步：根据选中状态筛选分类
 
   return (
     <div className="node-box">
@@ -139,5 +135,15 @@ const NodeBox = () => {
     </div>
   );
 };
+
+
+// ========== 辅助函数 ==========
+
+/** 根据选中的分类筛选要显示的分类 */
+function filterCategories(categories, selectedCategory) {
+  if (selectedCategory === null) return categories;                              // 选中"全部"，显示所有分类
+  return categories.filter(([key]) => key === selectedCategory);                 // 否则只显示选中的分类
+}
+
 
 export default NodeBox;

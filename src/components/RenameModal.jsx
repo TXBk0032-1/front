@@ -1,12 +1,12 @@
 /**
- * RenameModal - 重命名弹窗
- *
+ * RenameModal.jsx - 重命名弹窗
+ * 
  * 用于修改节点名称的弹窗
  * 居中显示，带遮罩层
- *
+ * 
  * 单选模式：标题"节点重命名"，输入框显示当前名称
  * 多选模式：标题"批量节点重命名"，输入框为空，placeholder显示"多值"
- *
+ * 
  * 触发方式：
  * 1. 右键菜单点击"重命名"
  * 2. 双击节点
@@ -23,12 +23,12 @@ const RenameModal = ({ isOpen, onClose, currentName, isMultiple, onConfirm }) =>
   const inputRef = useRef(null);                                                 // 输入框引用（用于聚焦）
   const prevIsOpenRef = useRef(false);                                           // 上一次的 isOpen 状态
 
-  // ==================== 弹窗打开时初始化 ====================
+
+  // ========== 弹窗打开时初始化 ==========
 
   useEffect(() => {
     const justOpened = isOpen && !prevIsOpenRef.current;                         // 判断是否刚打开
     prevIsOpenRef.current = isOpen;                                              // 更新上一次状态
-    
     if (!justOpened) return;                                                     // 不是刚打开，不处理
     
     setTimeout(() => {                                                           // 延迟执行（等DOM渲染完）
@@ -38,36 +38,34 @@ const RenameModal = ({ isOpen, onClose, currentName, isMultiple, onConfirm }) =>
     }, 50);
   }, [isOpen, currentName, isMultiple]);
 
-  // ==================== 确认重命名 ====================
+
+  // ========== 确认重命名 ==========
 
   const handleConfirm = () => {
     const trimmedValue = inputValue.trim();                                      // 去除首尾空格
-    if (!trimmedValue) {                                                         // 如果为空
-      onClose();                                                                 // 直接关闭
-      return;
-    }
-    if (!isMultiple && trimmedValue === currentName) {                           // 单选模式下没变化
-      onClose();                                                                 // 直接关闭
-      return;
-    }
+    if (!trimmedValue) { onClose(); return; }                                    // 为空则直接关闭
+    if (!isMultiple && trimmedValue === currentName) { onClose(); return; }      // 单选模式下没变化则直接关闭
     onConfirm(trimmedValue);                                                     // 调用确认回调
     onClose();                                                                   // 关闭弹窗
   };
 
-  // ==================== 键盘事件 ====================
+
+  // ========== 键盘事件 ==========
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleConfirm();                                      // 回车确认
     if (e.key === "Escape") onClose();                                           // ESC关闭
   };
 
-  // ==================== 点击遮罩关闭 ====================
+
+  // ========== 点击遮罩关闭 ==========
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) onClose();                                 // 只有点击遮罩本身才关闭
   };
 
-  // ==================== 渲染 ====================
+
+  // ========== 渲染 ==========
 
   if (!isOpen) return null;                                                      // 弹窗未打开，不渲染
 
@@ -107,5 +105,6 @@ const RenameModal = ({ isOpen, onClose, currentName, isMultiple, onConfirm }) =>
     </div>
   );
 };
+
 
 export default RenameModal;

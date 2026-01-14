@@ -6,11 +6,11 @@
  */
 
 
-// ==================== 节点注册表数据 ====================
+// ========== 节点注册表数据 ==========
 
 export const NODE_REGISTRY = {
   
-  // 节点分类：每个分类包含显示名称、主题色、包含的节点ID列表
+  /** 节点分类：每个分类包含显示名称、主题色、包含的节点ID列表 */
   categories: {
     node_group1: {
       label: "节点组1",                                                          // 分类名称
@@ -24,7 +24,7 @@ export const NODE_REGISTRY = {
     },
   },
 
-  // 节点配置：每个节点包含显示名称、输入端口、输出端口、参数配置
+  /** 节点配置：每个节点包含显示名称、输入端口、输出端口、参数配置 */
   nodes: {
     node1: {
       label: "节点1",                                                            // 节点名称
@@ -66,40 +66,30 @@ export const NODE_REGISTRY = {
 };
 
 
-// ==================== 辅助函数 ====================
+// ========== 辅助函数 ==========
 
-/**
- * 根据节点ID获取节点配置
- */
+/** 根据节点ID获取节点配置 */
 export const getNodeConfig = (nodeKey) => {
   return NODE_REGISTRY.nodes[nodeKey] || {};                                     // 取不到就返回空对象
 };
 
-/**
- * 根据节点ID找到它属于哪个分类
- */
+/** 根据节点ID找到它属于哪个分类 */
 export const findCategoryByNode = (nodeKey) => {
   const categories = NODE_REGISTRY.categories;                                   // 获取所有分类
   for (const catKey of Object.keys(categories)) {                                // 遍历分类
-    if (categories[catKey].nodes.includes(nodeKey)) {                            // 如果该分类包含这个节点
-      return catKey;                                                             // 返回分类ID
-    }
+    if (categories[catKey].nodes.includes(nodeKey)) return catKey;               // 找到就返回分类ID
   }
   return null;                                                                   // 找不到返回 null
 };
 
-/**
- * 根据节点ID获取它的主题色
- */
+/** 根据节点ID获取它的主题色 */
 export const getNodeColor = (nodeKey) => {
-  const catKey = findCategoryByNode(nodeKey);                                    // 先找到分类
-  if (!catKey) return undefined;                                                 // 找不到分类就返回 undefined
-  return NODE_REGISTRY.categories[catKey].color;                                 // 返回分类的颜色
+  const catKey = findCategoryByNode(nodeKey);                                    // 第1步：找到分类
+  if (!catKey) return undefined;                                                 // 第2步：找不到分类就返回 undefined
+  return NODE_REGISTRY.categories[catKey].color;                                 // 第3步：返回分类的颜色
 };
 
-/**
- * 获取所有分类（用于渲染节点面板）
- */
+/** 获取所有分类（用于渲染节点面板） */
 export const getAllCategories = () => {
   return Object.entries(NODE_REGISTRY.categories);                               // 返回 [分类ID, 分类数据] 数组
 };

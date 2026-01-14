@@ -21,10 +21,10 @@ import { getNodeConfig, getNodeColor } from "../constants/nodeRegistry";        
  * @returns {Object} React Flow 节点对象
  */
 export const createNode = (id, nodeKey, position) => {
-  const config = getNodeConfig(nodeKey);                                         // 从注册表获取节点配置
-  const color = getNodeColor(nodeKey);                                           // 从注册表获取节点颜色
+  const config = getNodeConfig(nodeKey);                                         // 第1步：从注册表获取节点配置
+  const color = getNodeColor(nodeKey);                                           // 第2步：从注册表获取节点颜色
 
-  return {                                                                        // 返回 React Flow 节点格式
+  return {                                                                       // 第3步：返回 React Flow 节点格式
     id,                                                                          // 节点ID
     type: config.type || "baseNode",                                             // 节点类型（默认 baseNode）
     position,                                                                    // 节点位置
