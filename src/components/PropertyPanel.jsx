@@ -1,12 +1,12 @@
 /**
  * PropertyPanel.jsx - 节点属性面板
- * 
+ *
  * 右键点击节点时显示的属性编辑面板
  * 根据节点配置的 params 参数动态生成编辑控件
  * 支持的参数类型：number（数字输入框）、string（文本输入框）、boolean（开关）
  */
 
-import { Input, Switch } from "@heroui/react";                                   // UI 组件
+import { Input, Switch } from "@heroui/react";                            // UI 组件
 import "./PropertyPanel.css";                                                    // 样式
 
 
@@ -18,7 +18,8 @@ const NumberInput = ({ label, value, onChange }) => (
     <span className="param-label">{label}</span>
     <Input
       type="number"
-      size="sm"
+      aria-label={label}
+      placeholder={label}
       value={String(value)}
       onChange={(e) => onChange(Number(e.target.value))}
       className="param-input"
@@ -32,7 +33,8 @@ const StringInput = ({ label, value, onChange }) => (
     <span className="param-label">{label}</span>
     <Input
       type="text"
-      size="sm"
+      aria-label={label}
+      placeholder={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="param-input"
@@ -40,15 +42,19 @@ const StringInput = ({ label, value, onChange }) => (
   </div>
 );
 
-/** 布尔开关 */
+/** 布尔开关 - HeroUI v3 结构 */
 const BooleanSwitch = ({ label, value, onChange }) => (
   <div className="param-item param-item-switch">
     <span className="param-label">{label}</span>
     <Switch
       size="sm"
       isSelected={value}
-      onValueChange={onChange}
-    />
+      onChange={onChange}
+    >
+      <Switch.Control>
+        <Switch.Thumb />
+      </Switch.Control>
+    </Switch>
   </div>
 );
 
@@ -68,7 +74,7 @@ const BooleanSwitch = ({ label, value, onChange }) => (
  * @param {function} onParamChange - 参数变化回调
  */
 const PropertyPanel = ({ x, y, position = 'below', scale = 1, nodeLabel, params, paramValues, onParamChange }) => {
-  
+
   if (!params || Object.keys(params).length === 0) return null;                  // 没有参数，不显示面板
 
   const clampedScale = Math.max(0.5, Math.min(1.5, scale));                       // 限制缩放范围
@@ -80,7 +86,7 @@ const PropertyPanel = ({ x, y, position = 'below', scale = 1, nodeLabel, params,
       <div className="panel-header">
         <span className="panel-title">{nodeLabel} 属性</span>
       </div>
-      
+
       {/* 参数列表 */}
       <div className="panel-content">
         {Object.entries(params).map(([paramKey, paramConfig]) =>
@@ -117,15 +123,15 @@ function calcPositionStyle(x, y, position, scale) {
 function renderParamEditor(paramKey, paramConfig, paramValues, onParamChange) {
   const currentValue = paramValues[paramKey] ?? paramConfig.default;             // 当前值，没有就用默认值
   const handleChange = (newValue) => onParamChange(paramKey, newValue);          // 变化回调
-  
+
   const editorMap = {                                                            // 类型到编辑器的映射
     number: NumberInput,
     string: StringInput,
     boolean: BooleanSwitch,
   };
-  
+
   const Editor = editorMap[paramConfig.type] || StringInput;                     // 获取编辑器组件，默认用文本输入框
-  
+
   return (
     <Editor
       key={paramKey}

@@ -32,7 +32,12 @@ export const NODE_REGISTRY = {
       outputs: [{ id: "out", label: "" }],                                       // 输出端口
       params: {                                                                  // 参数配置
         param1: { label: "参数1", type: "number", default: 1 },
-        param2: { label: "参数2", type: "number", default: 2 },
+        param2: { label: "参数2", type: "boolean", default: false },
+        param3: { label: "参数3", type: "string", default: "3" },
+        param4: { label: "参数4", type: "number", default: 4 },
+        param5: { label: "参数5", type: "number", default: 5 },
+        param6: { label: "参数6", type: "number", default: 6 },
+        param7: { label: "参数7", type: "number", default: 7 },
       },
     },
     node2: {
