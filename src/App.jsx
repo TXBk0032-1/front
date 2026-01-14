@@ -1,270 +1,166 @@
 /**
- * App.jsx - 应用主入口
- *
- * 这是整个蓝图编辑器的"总装车间"
- * 它本身不干活，只负责把各个零件组装起来
+ * App.jsx - 蓝图编辑器主入口
  * 
- * 代码结构：
- * - hooks/ 目录：各种功能模块（历史记录、剪贴板、右键菜单等）
- * - utils/ 目录：工具函数（创建节点）
- * - config/ 目录：配置文件（初始数据、样式配置）
- * - components/ 目录：UI组件（节点、面板、弹窗）
+ * 这个文件是整个应用的"总控室"，负责：
+ * 1. 初始化各个功能模块
+ * 2. 把模块连接到画布事件上
+ * 3. 渲染界面
  */
 
-import { useMemo, useRef } from "react";
-import {
-  ReactFlow,
-  useNodesState,
-  useEdgesState,
-  ReactFlowProvider,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
+import { useMemo, useRef } from "react";                                         // React 基础 hooks
+import { ReactFlow, useNodesState, useEdgesState, ReactFlowProvider } from "@xyflow/react";  // React Flow 核心
+import "@xyflow/react/dist/style.css";                                           // React Flow 样式
 
-// ========== 组件 ==========
-import BaseNode from "./components/BaseNode";
-import NodeBox from "./components/NodeBox";
-import NodeContextMenu from "./components/NodeContextMenu";
-import RenameModal from "./components/RenameModal";
+import BaseNode from "./components/BaseNode";                                    // 自定义节点组件
+import NodeBox from "./components/NodeBox";                                      // 左侧节点面板
+import NodeContextMenu from "./components/NodeContextMenu";                      // 右键菜单
+import RenameModal from "./components/RenameModal";                              // 重命名弹窗
 
-// ========== Hooks ==========
-import useHistory from "./hooks/useHistory";
-import useClipboard from "./hooks/useClipboard";
-import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
-import useContextMenu from "./hooks/useContextMenu";
-import useRename from "./hooks/useRename";
-import useNodeActions from "./hooks/useNodeActions";
-import useFlowEvents from "./hooks/useFlowEvents";
+import useHistory from "./hooks/useHistory";                                     // 撤销/重做功能
+import useClipboard from "./hooks/useClipboard";                                 // 复制/粘贴功能
+import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";                 // 键盘快捷键
+import useContextMenu from "./hooks/useContextMenu";                             // 右键菜单控制
+import useRename from "./hooks/useRename";                                       // 重命名功能
+import useNodeActions from "./hooks/useNodeActions";                             // 节点操作（复制、删除）
+import useFlowEvents from "./hooks/useFlowEvents";                               // 画布事件处理
 
-// ========== 工具和配置 ==========
-import { createNode } from "./utils/createNode";
-import { initialNodes, initialEdges, INITIAL_NODE_ID } from "./config/initialData";
-import {
-  defaultEdgeOptions,
-  panOnDrag,
-  selectionMode,
-  deleteKeyCode,
-  nodeOrigin,
-  colorMode,
-  containerStyle,
-} from "./config/flowConfig";
+import { createNode } from "./utils/createNode";                                 // 创建节点的工具函数
+import { initialNodes, initialEdges, INITIAL_NODE_ID } from "./config/initialData";  // 初始数据
+import * as flowConfig from "./config/flowConfig";                               // 画布配置
 
-// ========== 画布组件 ==========
 
 /**
- * FlowCanvas - React Flow 画布
- *
- * 这是核心组件，但它只做"组装"工作：
- * 1. 初始化各个功能模块（hooks）
- * 2. 把模块提供的方法绑定到 ReactFlow 的事件上
- * 3. 渲染画布和弹窗
+ * FlowCanvas - 画布组件
  * 
- * 所有具体逻辑都在各个 hooks 里，这里只是"接线"
+ * 这是核心组件，但它只做"组装"工作：
+ * 把各个功能模块初始化好，然后绑定到画布的事件上
  */
 function FlowCanvas() {
-  // ---------- 基础数据 ----------
   
-  // 注册自定义节点类型（只创建一次）
-  const nodeTypes = useMemo(() => ({ baseNode: BaseNode }), []);
+  // ==================== 第一步：准备基础数据 ====================
   
-  // 节点和连线的状态
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  
-  // 节点ID计数器（用于生成唯一ID）
-  const nodeIdCounter = useRef(INITIAL_NODE_ID);
+  const nodeTypes = useMemo(() => ({ baseNode: BaseNode }), []);                 // 注册自定义节点类型
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);          // 节点状态：当前画布上的所有节点
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);          // 连线状态：当前画布上的所有连线
+  const nodeIdCounter = useRef(INITIAL_NODE_ID);                                 // 节点ID计数器：用于生成唯一ID
 
-  // ---------- 功能模块 ----------
+  // ==================== 第二步：初始化功能模块 ====================
   
-  // 历史记录（撤销/重做）
-  const { saveToHistory, undo, redo, isUndoingRef } = useHistory(
-    nodes, edges, setNodes, setEdges
-  );
-  
-  // 剪贴板（Ctrl+C/V）
-  const { copy, paste, trackMousePosition } = useClipboard(
-    nodes, setNodes, createNode, nodeIdCounter, saveToHistory
-  );
-  
-  // 键盘快捷键
-  useKeyboardShortcuts({ undo, redo, copy, paste });
-  
-  // 右键菜单（传入 nodes 用于判断多选）
-  const {
-    contextMenu,
-    openContextMenu,
-    closeContextMenu,
-    handlePaneContextMenu,
-    handlePaneClick,
-    handleNodeClick,
-  } = useContextMenu(nodes);
-  
-  // 重命名弹窗
-  const {
-    renameTarget,
-    isRenameOpen,
-    openRenameModal,
-    closeRenameModal,
-    confirmRename,
-  } = useRename(nodes, setNodes, saveToHistory);
-  
-  // 节点操作（复制粘贴、删除，支持批量）
-  const { duplicateNodes, deleteNodes } = useNodeActions(
-    nodes, setNodes, setEdges, nodeIdCounter, saveToHistory
-  );
-  
-  // 画布事件（连线、拖拽等）
-  const {
-    handleConnect,
-    handleReconnectStart,
-    handleReconnect,
-    handleReconnectEnd,
-    handleNodesChange,
-    handleEdgesChange,
-    handleDrop,
-    handleDragOver,
-  } = useFlowEvents(
-    setNodes, setEdges, onNodesChange, onEdgesChange,
-    saveToHistory, isUndoingRef, nodeIdCounter
-  );
+  const history = useHistory(nodes, edges, setNodes, setEdges);                  // 历史记录模块：管理撤销/重做
+  const clipboard = useClipboard(nodes, setNodes, createNode, nodeIdCounter, history.saveToHistory);  // 剪贴板模块：管理复制/粘贴
+  const contextMenu = useContextMenu(nodes);                                     // 右键菜单模块：管理菜单显示/隐藏
+  const rename = useRename(nodes, setNodes, history.saveToHistory);              // 重命名模块：管理重命名弹窗
+  const nodeActions = useNodeActions(nodes, setNodes, setEdges, nodeIdCounter, history.saveToHistory);  // 节点操作模块：复制、删除
+  const flowEvents = useFlowEvents(setNodes, setEdges, onNodesChange, onEdgesChange, history.saveToHistory, history.isUndoingRef, nodeIdCounter);  // 画布事件模块
 
-  // ---------- 右键菜单操作 ----------
+  // ==================== 第三步：注册键盘快捷键 ====================
   
-  // 这几个函数是"桥接"作用，把右键菜单的点击事件连接到具体操作
-  const handleMenuCopyPaste = () => {
-    if (contextMenu) {
-      duplicateNodes(contextMenu.nodeIds);
-      closeContextMenu();
-    }
+  useKeyboardShortcuts({                                                         // 绑定快捷键到对应功能
+    undo: history.undo,                                                          // Ctrl+Z -> 撤销
+    redo: history.redo,                                                          // Ctrl+Y -> 重做
+    copy: clipboard.copy,                                                        // Ctrl+C -> 复制
+    paste: clipboard.paste,                                                      // Ctrl+V -> 粘贴
+  });
+
+  // ==================== 第四步：定义右键菜单的操作 ====================
+  
+  const handleMenuCopyPaste = () => {                                            // 菜单点击"复制并粘贴"
+    if (!contextMenu.contextMenu) return;                                        // 如果菜单没打开，不执行
+    nodeActions.duplicateNodes(contextMenu.contextMenu.nodeIds);                 // 复制选中的节点
+    contextMenu.closeContextMenu();                                              // 关闭菜单
   };
   
-  const handleMenuDelete = () => {
-    if (contextMenu) {
-      deleteNodes(contextMenu.nodeIds);
-      closeContextMenu();
-    }
+  const handleMenuDelete = () => {                                               // 菜单点击"删除"
+    if (!contextMenu.contextMenu) return;                                        // 如果菜单没打开，不执行
+    nodeActions.deleteNodes(contextMenu.contextMenu.nodeIds);                    // 删除选中的节点
+    contextMenu.closeContextMenu();                                              // 关闭菜单
   };
   
-  const handleMenuRename = () => {
-    if (contextMenu) {
-      // 重命名只能操作单个节点，取第一个
-      openRenameModal(contextMenu.nodeIds[0]);
-      closeContextMenu();
-    }
+  const handleMenuRename = () => {                                               // 菜单点击"重命名"
+    if (!contextMenu.contextMenu) return;                                        // 如果菜单没打开，不执行
+    rename.openRenameModal(contextMenu.contextMenu.nodeIds[0]);                  // 打开重命名弹窗（只能重命名第一个）
+    contextMenu.closeContextMenu();                                              // 关闭菜单
   };
 
-  // ---------- 节点数据注入 ----------
+  // ==================== 第五步：给节点注入双击回调 ====================
   
-  // 把双击重命名功能注入到每个节点
-  // 这样节点组件就可以调用 onDoubleClick 来打开重命名弹窗
-  const nodesWithCallbacks = useMemo(() => {
-    return nodes.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        onDoubleClick: openRenameModal,
-      },
+  const nodesWithCallbacks = useMemo(() => {                                     // 给每个节点添加双击回调
+    return nodes.map((node) => ({                                                // 遍历所有节点
+      ...node,                                                                   // 保留原有属性
+      data: { ...node.data, onDoubleClick: rename.openRenameModal },             // 注入双击回调：打开重命名弹窗
     }));
-  }, [nodes, openRenameModal]);
+  }, [nodes, rename.openRenameModal]);
 
-  // ---------- 渲染 ----------
+  // ==================== 第六步：渲染界面 ====================
   
   return (
     <>
+      {/* 画布主体 */}
       <ReactFlow
-        // 数据
-        nodes={nodesWithCallbacks}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        
-        // 状态变化
-        onNodesChange={handleNodesChange}
-        onEdgesChange={handleEdgesChange}
-        onConnect={handleConnect}
-        
-        // 拖拽创建节点
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        
-        // 鼠标追踪（用于粘贴定位）
-        onMouseMove={trackMousePosition}
-        
-        // 右键菜单
-        onNodeContextMenu={openContextMenu}
-        onPaneContextMenu={handlePaneContextMenu}
-        
-        // 左键点击关闭菜单
-        onPaneClick={handlePaneClick}
-        onNodeClick={handleNodeClick}
-        
-        // 连线重连（拔出插头效果）
-        onReconnect={handleReconnect}
-        onReconnectStart={handleReconnectStart}
-        onReconnectEnd={handleReconnectEnd}
-        
-        // 交互配置
-        panOnDrag={panOnDrag}
-        selectionOnDrag
-        selectionMode={selectionMode}
-        deleteKeyCode={deleteKeyCode}
-        
-        // 外观配置
-        nodeOrigin={nodeOrigin}
-        colorMode={colorMode}
-        fitView
-        defaultEdgeOptions={defaultEdgeOptions}
-        connectionLineStyle={defaultEdgeOptions.style}
+        nodes={nodesWithCallbacks}                                               // 节点数据
+        edges={edges}                                                            // 连线数据
+        nodeTypes={nodeTypes}                                                    // 自定义节点类型
+        onNodesChange={flowEvents.handleNodesChange}                             // 节点变化时的回调
+        onEdgesChange={flowEvents.handleEdgesChange}                             // 连线变化时的回调
+        onConnect={flowEvents.handleConnect}                                     // 新建连线时的回调
+        onDrop={flowEvents.handleDrop}                                           // 拖拽放置时的回调
+        onDragOver={flowEvents.handleDragOver}                                   // 拖拽经过时的回调
+        onMouseMove={clipboard.trackMousePosition}                               // 鼠标移动时记录位置（用于粘贴定位）
+        onNodeContextMenu={contextMenu.openContextMenu}                          // 节点右键时的回调
+        onPaneContextMenu={contextMenu.handlePaneContextMenu}                    // 画布空白处右键时的回调
+        onPaneClick={contextMenu.handlePaneClick}                                // 画布空白处点击时的回调
+        onNodeClick={contextMenu.handleNodeClick}                                // 节点点击时的回调
+        onReconnect={flowEvents.handleReconnect}                                 // 连线重连时的回调
+        onReconnectStart={flowEvents.handleReconnectStart}                       // 开始重连时的回调
+        onReconnectEnd={flowEvents.handleReconnectEnd}                           // 结束重连时的回调
+        panOnDrag={flowConfig.panOnDrag}                                         // 拖拽画布的鼠标按键配置
+        selectionOnDrag                                                          // 启用拖拽框选
+        selectionMode={flowConfig.selectionMode}                                 // 框选模式配置
+        deleteKeyCode={flowConfig.deleteKeyCode}                                 // 删除键配置
+        nodeOrigin={flowConfig.nodeOrigin}                                       // 节点原点配置
+        colorMode={flowConfig.colorMode}                                         // 颜色模式配置
+        fitView                                                                  // 自动适应视图
+        defaultEdgeOptions={flowConfig.defaultEdgeOptions}                       // 连线默认样式
+        connectionLineStyle={flowConfig.defaultEdgeOptions.style}                // 拖拽连线时的样式
       />
 
       {/* 右键菜单 */}
-      {contextMenu && (
+      {contextMenu.contextMenu && (                                              // 如果菜单打开了
         <NodeContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          nodeCount={contextMenu.nodeIds.length}
-          onCopyPaste={handleMenuCopyPaste}
-          onDelete={handleMenuDelete}
-          onRename={handleMenuRename}
-          onClose={closeContextMenu}
+          x={contextMenu.contextMenu.x}                                          // 菜单X坐标
+          y={contextMenu.contextMenu.y}                                          // 菜单Y坐标
+          nodeCount={contextMenu.contextMenu.nodeIds.length}                     // 选中的节点数量
+          onCopyPaste={handleMenuCopyPaste}                                      // 复制并粘贴的回调
+          onDelete={handleMenuDelete}                                            // 删除的回调
+          onRename={handleMenuRename}                                            // 重命名的回调
+          onClose={contextMenu.closeContextMenu}                                 // 关闭菜单的回调
         />
       )}
 
       {/* 重命名弹窗 */}
       <RenameModal
-        isOpen={isRenameOpen}
-        onClose={closeRenameModal}
-        currentName={renameTarget?.currentName || ""}
-        onConfirm={confirmRename}
+        isOpen={rename.isRenameOpen}                                             // 弹窗是否打开
+        onClose={rename.closeRenameModal}                                        // 关闭弹窗的回调
+        currentName={rename.renameTarget?.currentName || ""}                     // 当前节点名称
+        onConfirm={rename.confirmRename}                                         // 确认重命名的回调
       />
     </>
   );
 }
 
-// ========== 主组件 ==========
-
-// 画布容器样式
-const canvasContainerStyle = {
-  flex: 1,
-  height: "100%",
-};
 
 /**
  * App - 应用入口
- *
- * 布局：左边节点面板，右边画布，左右并列
  * 
- * ReactFlowProvider 是必须的，它提供 React Flow 的上下文
- * 所有用到 useReactFlow 的组件都要放在它里面
+ * 布局结构：左边节点面板 + 右边画布
  */
 function App() {
   return (
-    <div style={containerStyle}>
-      {/* 左侧：节点面板 */}
-      <NodeBox />
-
-      {/* 右侧：画布 */}
-      <div style={canvasContainerStyle}>
-        <ReactFlowProvider>
-          <FlowCanvas />
+    <div style={flowConfig.containerStyle}>                                      {/* 整体容器：flex布局 */}
+      <NodeBox />                                                                {/* 左侧：节点面板 */}
+      <div style={{ flex: 1, height: "100%" }}>                                  {/* 右侧：画布容器 */}
+        <ReactFlowProvider>                                                      {/* React Flow 上下文提供者 */}
+          <FlowCanvas />                                                         {/* 画布组件 */}
         </ReactFlowProvider>
       </div>
     </div>

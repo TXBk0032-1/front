@@ -1,110 +1,98 @@
 /**
- * RenameModal - 重命名弹窗组件
+ * RenameModal - 重命名弹窗
  * 
  * 用于修改节点名称的弹窗
- * 自定义实现，居中显示，带遮罩层
+ * 居中显示，带遮罩层
  * 
  * 触发方式：
  * 1. 右键菜单点击"重命名"
  * 2. 双击节点
  */
 
-import { useState, useEffect, useRef } from "react";
-import { Button, Input, Label, TextField } from "@heroui/react";
-import "./RenameModal.css";
+import { useState, useEffect, useRef } from "react";                             // React hooks
+import { Button, Input, Label, TextField } from "@heroui/react";                 // UI 组件
+import "./RenameModal.css";                                                      // 样式
 
-/**
- * RenameModal - 重命名弹窗
- * 
- * @param {Object} props
- * @param {boolean} props.isOpen - 弹窗是否打开
- * @param {Function} props.onClose - 关闭弹窗的回调
- * @param {string} props.currentName - 当前节点名称
- * @param {Function} props.onConfirm - 确认修改的回调，参数为新名称
- */
+
 const RenameModal = ({ isOpen, onClose, currentName, onConfirm }) => {
-  // 输入框的值
-  const [inputValue, setInputValue] = useState("");
   
-  // 输入框引用，用于自动聚焦
-  const inputRef = useRef(null);
-  
-  // 记录上一次的 isOpen 状态，用于检测弹窗刚打开的时机
-  const prevIsOpenRef = useRef(false);
+  const [inputValue, setInputValue] = useState("");                              // 输入框的值
+  const inputRef = useRef(null);                                                 // 输入框引用（用于聚焦）
+  const prevIsOpenRef = useRef(false);                                           // 上一次的 isOpen 状态
 
-  // 当弹窗刚打开时，重置输入框的值并聚焦
+  // ==================== 弹窗打开时初始化 ====================
+
   useEffect(() => {
-    // 检测弹窗从关闭变为打开
-    if (isOpen && !prevIsOpenRef.current) {
-      // 使用 setTimeout 来避免在 effect 中同步调用 setState
-      setTimeout(() => {
-        setInputValue(currentName);
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      }, 50);
-    }
-    prevIsOpenRef.current = isOpen;
+    const justOpened = isOpen && !prevIsOpenRef.current;                         // 判断是否刚打开
+    prevIsOpenRef.current = isOpen;                                              // 更新上一次状态
+    
+    if (!justOpened) return;                                                     // 不是刚打开，不处理
+    
+    setTimeout(() => {                                                           // 延迟执行（等DOM渲染完）
+      setInputValue(currentName);                                                // 设置输入框初始值
+      inputRef.current?.focus();                                                 // 聚焦输入框
+      inputRef.current?.select();                                                // 选中文字
+    }, 50);
   }, [isOpen, currentName]);
 
-  // 处理确认
+  // ==================== 确认重命名 ====================
+
   const handleConfirm = () => {
-    // 如果名称没变或者为空，直接关闭
-    if (!inputValue.trim() || inputValue === currentName) {
-      onClose();
+    const trimmedValue = inputValue.trim();                                      // 去除首尾空格
+    if (!trimmedValue || trimmedValue === currentName) {                         // 如果为空或没变化
+      onClose();                                                                 // 直接关闭
       return;
     }
-    onConfirm(inputValue.trim());
-    onClose();
+    onConfirm(trimmedValue);                                                     // 调用确认回调
+    onClose();                                                                   // 关闭弹窗
   };
 
-  // 处理键盘事件
+  // ==================== 键盘事件 ====================
+
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleConfirm();
-    } else if (e.key === "Escape") {
-      onClose();
-    }
+    if (e.key === "Enter") handleConfirm();                                      // 回车确认
+    if (e.key === "Escape") onClose();                                           // ESC关闭
   };
 
-  // 点击遮罩层关闭弹窗
+  // ==================== 点击遮罩关闭 ====================
+
   const handleOverlayClick = (e) => {
-    // 只有点击遮罩层本身才关闭，点击弹窗内容不关闭
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
+    if (e.target === e.currentTarget) onClose();                                 // 只有点击遮罩本身才关闭
   };
 
-  // 如果弹窗未打开，不渲染任何内容
-  if (!isOpen) return null;
+  // ==================== 渲染 ====================
+
+  if (!isOpen) return null;                                                      // 弹窗未打开，不渲染
 
   return (
-    <div className="rename-modal-overlay" onClick={handleOverlayClick}>
-      <div className="rename-modal">
+    <div className="rename-modal-overlay" onClick={handleOverlayClick}>          {/* 遮罩层 */}
+      <div className="rename-modal">                                             {/* 弹窗主体 */}
+        
+        {/* 标题 */}
         <div className="rename-modal-header">
           <h3 className="rename-modal-title">重命名节点</h3>
         </div>
         
+        {/* 输入框 */}
         <div className="rename-modal-body">
           <TextField>
             <Label>节点名称</Label>
             <Input
               ref={inputRef}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onChange={(e) => setInputValue(e.target.value)}                    // 输入时更新值
+              onKeyDown={handleKeyDown}                                          // 键盘事件
               placeholder="请输入节点名称"
             />
           </TextField>
         </div>
         
+        {/* 按钮 */}
         <div className="rename-modal-footer">
-          <Button variant="flat" onPress={onClose}>
-            取消
-          </Button>
-          <Button color="primary" onPress={handleConfirm}>
-            确认
-          </Button>
+          <Button variant="flat" onPress={onClose}>取消</Button>                 {/* 取消按钮 */}
+          <Button color="primary" onPress={handleConfirm}>确认</Button>          {/* 确认按钮 */}
         </div>
+        
       </div>
     </div>
   );

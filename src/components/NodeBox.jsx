@@ -1,148 +1,125 @@
 /**
  * NodeBox - 节点面板组件
- *
- * 这是画布左边的侧边栏，类似 Scratch 编辑器的积木盒
+ * 
+ * 画布左边的侧边栏，类似 Scratch 编辑器的积木盒
  * 用户可以从这里拖拽节点到画布上
- *
- * 结构（类似Scratch）：
- * - 左边是分类栏（CategoryBar），竖向排列的色块，点击可以筛选节点
- * - 右边是节点列表，根据选中的分类显示对应的节点
+ * 
+ * 结构：
+ * - 左边是分类栏（竖向色块，点击筛选）
+ * - 右边是节点列表（根据选中分类显示）
  */
 
-import { useState } from "react";
-import { getNodeConfig, getAllCategories } from "../constants/nodeRegistry";
-import "./NodeBox.css";
+import { useState } from "react";                                                // React hooks
+import { getNodeConfig, getAllCategories } from "../constants/nodeRegistry";     // 节点注册表工具函数
+import "./NodeBox.css";                                                          // 样式
 
-// ========== 分类栏 ==========
+
+// ==================== 分类栏组件 ====================
 
 /**
- * CategoryBar - 分类筛选栏（竖向色块）
- *
- * 类似Scratch左侧的分类色块，点击可以切换筛选
- * 选中"全部"时显示所有节点，选中某个分类时只显示该分类的节点
- *
- * @param {Array} categories - 所有分类数据 [[key, data], ...]
- * @param {string|null} selectedCategory - 当前选中的分类key，null表示全部
- * @param {Function} onSelectCategory - 选中分类时的回调
+ * CategoryBar - 分类筛选栏
+ * 竖向排列的色块，点击切换筛选
  */
 const CategoryBar = ({ categories, selectedCategory, onSelectCategory }) => {
-  // "全部"按钮的默认颜色
-  const allColor = "#666";
+  const allColor = "#666";                                                       // "全部"按钮的颜色
 
   return (
     <div className="category-bar">
       {/* "全部"按钮 */}
       <div
-        className={`category-item ${selectedCategory === null ? "active" : ""}`}
+        className={`category-item ${selectedCategory === null ? "active" : ""}`} // 选中时添加 active 类
         style={{
-          "--category-color": allColor,
-          color: selectedCategory === null ? "#fff" : allColor,
+          "--category-color": allColor,                                          // CSS变量：分类颜色
+          color: selectedCategory === null ? "#fff" : allColor,                  // 文字颜色
         }}
-        onClick={() => onSelectCategory(null)}
+        onClick={() => onSelectCategory(null)}                                   // 点击选中"全部"
       >
         全部
       </div>
 
-      {/* 各分类按钮 - 用CSS变量设置分类颜色 */}
+      {/* 各分类按钮 */}
       {categories.map(([key, data]) => (
         <div
           key={key}
           className={`category-item ${selectedCategory === key ? "active" : ""}`}
           style={{
-            "--category-color": data.color,
-            color: selectedCategory === key ? "#fff" : data.color,
+            "--category-color": data.color,                                      // CSS变量：分类颜色
+            color: selectedCategory === key ? "#fff" : data.color,               // 文字颜色
           }}
-          onClick={() => onSelectCategory(key)}
+          onClick={() => onSelectCategory(key)}                                  // 点击选中该分类
         >
-          {data.label}
+          {data.label}                                                           {/* 分类名称 */}
         </div>
       ))}
     </div>
   );
 };
 
-// ========== 单个节点项 ==========
+
+// ==================== 节点项组件 ====================
 
 /**
- * NodeItem - 面板里的单个节点按钮
- *
- * 用户拖拽这个按钮到画布上，就会创建一个新节点
- *
- * @param {string} nodeId - 节点在注册表中的ID
- * @param {string} color - 节点的主题色（从分类继承）
+ * NodeItem - 单个节点按钮
+ * 拖拽这个按钮到画布上，就会创建一个新节点
  */
 const NodeItem = ({ nodeId, color }) => {
-  // 从注册表获取节点配置
-  const config = getNodeConfig(nodeId);
+  const config = getNodeConfig(nodeId);                                          // 获取节点配置
 
-  // 拖拽开始时，把节点ID存到 dataTransfer 里
-  // 这样放下的时候，画布就知道要创建哪种节点
+  /**
+   * 拖拽开始
+   * 把节点ID存到 dataTransfer，画布放下时会读取
+   */
   const handleDragStart = (event) => {
-    event.dataTransfer.setData("application/reactflow", nodeId);
-    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("application/reactflow", nodeId);                 // 存储节点ID
+    event.dataTransfer.effectAllowed = "move";                                   // 设置拖拽效果
   };
 
   return (
     <div
       className="node-item"
-      style={{ background: color }}
-      draggable
-      onDragStart={handleDragStart}
+      style={{ background: color }}                                              // 背景色
+      draggable                                                                  // 可拖拽
+      onDragStart={handleDragStart}                                              // 拖拽开始事件
     >
-      {config.label || nodeId}
+      {config.label || nodeId}                                                   {/* 节点名称 */}
     </div>
   );
 };
 
-// ========== 节点分组 ==========
+
+// ==================== 节点分组组件 ====================
 
 /**
  * NodeGroup - 一组同类型的节点
- *
- * 比如"输入层"、"卷积层"这种分类
  * 每个分组有自己的标题和颜色
- *
- * @param {Object} groupData - 分组数据（包含 label、color、nodes）
  */
 const NodeGroup = ({ groupData }) => {
-  const { label, color, nodes = [] } = groupData;
+  const { label, color, nodes = [] } = groupData;                                // 解构分组数据
 
   return (
     <div className="node-group">
-      {/* 分组标题 */}
-      <div className="group-title" style={{ color }}>
-        {label}
-      </div>
-
-      {/* 该分组下的所有节点 */}
-      {nodes.map((nodeId) => (
+      <div className="group-title" style={{ color }}>{label}</div>               {/* 分组标题 */}
+      {nodes.map((nodeId) => (                                                   // 遍历该分组的节点
         <NodeItem key={nodeId} nodeId={nodeId} color={color} />
       ))}
     </div>
   );
 };
 
-// ========== 主组件 ==========
+
+// ==================== 主组件 ====================
 
 /**
  * NodeBox - 节点面板主体
- *
- * 独立的侧边栏组件，和画布左右并列
- * 包含分类栏和节点列表两部分
  */
 const NodeBox = () => {
-  // 获取所有分类数据
-  const categories = getAllCategories();
-
-  // 当前选中的分类，null 表示显示全部
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const categories = getAllCategories();                                         // 获取所有分类
+  const [selectedCategory, setSelectedCategory] = useState(null);                // 当前选中的分类（null=全部）
 
   // 根据选中的分类筛选要显示的分类
-  // 如果选中了某个分类，只显示那一个；否则显示全部
-  const filteredCategories =
-    selectedCategory === null
-      ? categories
-      : categories.filter(([key]) => key === selectedCategory);
+  const filteredCategories = selectedCategory === null                           // 如果选中"全部"
+    ? categories                                                                 // 显示所有分类
+    : categories.filter(([key]) => key === selectedCategory);                    // 否则只显示选中的分类
 
   return (
     <div className="node-box">

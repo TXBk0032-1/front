@@ -1,151 +1,120 @@
 /**
- * useFlowEvents - 画布事件处理 Hook
+ * useFlowEvents - 画布事件处理
  * 
  * 处理 React Flow 画布上的各种事件：
- * - 连线相关：新建连线、重连连线（拔出插头效果）
- * - 拖拽相关：从节点面板拖拽节点到画布
- * - 状态变化：节点移动、删除等变化时保存历史
- * 
- * 把这些事件处理逻辑从主组件抽出来，让主组件更清爽
+ * - 连线事件：新建连线、重连连线
+ * - 状态变化：节点移动、删除时保存历史
+ * - 拖拽创建：从节点面板拖拽节点到画布
  */
 
-import { useCallback, useRef } from "react";
-import { addEdge, reconnectEdge, useReactFlow } from "@xyflow/react";
-import { createNode } from "../utils/createNode";
+import { useCallback, useRef } from "react";                                     // React hooks
+import { addEdge, reconnectEdge, useReactFlow } from "@xyflow/react";            // React Flow 工具函数
+import { createNode } from "../utils/createNode";                                // 创建节点的工具函数
 
-/**
- * @param {Function} setNodes - 设置节点的函数
- * @param {Function} setEdges - 设置连线的函数
- * @param {Function} onNodesChange - React Flow 的节点变化处理函数
- * @param {Function} onEdgesChange - React Flow 的连线变化处理函数
- * @param {Function} saveToHistory - 保存历史记录的函数
- * @param {Object} isUndoingRef - 是否正在撤销的标记
- * @param {Object} nodeIdCounterRef - 节点ID计数器的 ref
- * @returns {Object} 事件处理函数集合
- */
+
 const useFlowEvents = (
-  setNodes,
-  setEdges,
-  onNodesChange,
-  onEdgesChange,
-  saveToHistory,
-  isUndoingRef,
-  nodeIdCounterRef
+  setNodes,                                                                      // 设置节点的函数
+  setEdges,                                                                      // 设置连线的函数
+  onNodesChange,                                                                 // React Flow 的节点变化处理
+  onEdgesChange,                                                                 // React Flow 的连线变化处理
+  saveToHistory,                                                                 // 保存历史记录的函数
+  isUndoingRef,                                                                  // 是否正在撤销的标记
+  nodeIdCounterRef                                                               // 节点ID计数器
 ) => {
-  // 获取坐标转换函数
-  const { screenToFlowPosition } = useReactFlow();
   
-  // 标记重连是否成功（用于判断是否要删除连线）
-  const edgeReconnectSuccessful = useRef(true);
+  const { screenToFlowPosition } = useReactFlow();                               // 获取坐标转换函数
+  const reconnectSuccessRef = useRef(true);                                      // 标记重连是否成功
 
-  // ========== 连线事件 ==========
+  // ==================== 连线事件 ====================
 
   /**
-   * 处理新建连线
-   * 
-   * 规则：输入端口只能接受一个连接
-   * 如果目标端口已有连接，先断开旧的，再建立新的
+   * 新建连线
+   * 规则：输入端口只能接受一个连接，如果已有连接则先断开
    */
   const handleConnect = useCallback((params) => {
-    saveToHistory();
-    setEdges((eds) => {
-      // 先删掉目标端口的旧连接
-      const filtered = eds.filter(
-        (e) => !(e.target === params.target && e.targetHandle === params.targetHandle)
+    saveToHistory();                                                             // 保存当前状态到历史
+    setEdges((currentEdges) => {                                                 // 更新连线
+      const targetPort = params.targetHandle;                                    // 目标端口ID
+      const targetNode = params.target;                                          // 目标节点ID
+      const withoutOldConnection = currentEdges.filter((edge) =>                 // 过滤掉目标端口的旧连接
+        !(edge.target === targetNode && edge.targetHandle === targetPort)
       );
-      // 再添加新连接
-      return addEdge(params, filtered);
+      return addEdge(params, withoutOldConnection);                              // 添加新连接
     });
   }, [setEdges, saveToHistory]);
 
   /**
-   * 开始重连（拔出连线）
-   * 标记重连开始，假设会失败
+   * 开始重连（用户拔出连线）
    */
   const handleReconnectStart = useCallback(() => {
-    edgeReconnectSuccessful.current = false;
+    reconnectSuccessRef.current = false;                                         // 假设重连会失败
   }, []);
 
   /**
-   * 重连成功
-   * 把连线从旧端口移到新端口
+   * 重连成功（连线连到了新端口）
    */
   const handleReconnect = useCallback((oldEdge, newConnection) => {
-    edgeReconnectSuccessful.current = true;
-    saveToHistory();
-    setEdges((els) => reconnectEdge(oldEdge, newConnection, els));
+    reconnectSuccessRef.current = true;                                          // 标记重连成功
+    saveToHistory();                                                             // 保存历史
+    setEdges((edges) => reconnectEdge(oldEdge, newConnection, edges));           // 更新连线
   }, [setEdges, saveToHistory]);
 
   /**
    * 重连结束
-   * 如果没成功连到新端口，就删除这条线（相当于拔掉了）
+   * 如果重连失败（没连到新端口），就删除这条线
    */
   const handleReconnectEnd = useCallback((_, edge) => {
-    if (!edgeReconnectSuccessful.current) {
-      saveToHistory();
-      setEdges((eds) => eds.filter((e) => e.id !== edge.id));
-    }
-    edgeReconnectSuccessful.current = true;
+    if (reconnectSuccessRef.current) return;                                     // 如果重连成功，不做处理
+    saveToHistory();                                                             // 保存历史
+    setEdges((edges) => edges.filter((e) => e.id !== edge.id));                  // 删除这条线
+    reconnectSuccessRef.current = true;                                          // 重置标记
   }, [setEdges, saveToHistory]);
 
-  // ========== 状态变化事件 ==========
+  // ==================== 状态变化事件 ====================
 
   /**
-   * 处理节点变化
-   * 在适当的时机保存历史记录
+   * 节点变化（移动、删除等）
+   * 在适当时机保存历史记录
    */
   const handleNodesChange = useCallback((changes) => {
-    // 检查是否有需要记录的变化
-    const hasPositionChange = changes.some(
-      (c) => c.type === "position" && c.dragging === false
+    const isUndoing = isUndoingRef.current;                                      // 是否正在撤销/重做
+    const hasPositionEnd = changes.some((c) =>                                   // 是否有节点停止拖拽
+      c.type === "position" && c.dragging === false
     );
-    const hasRemove = changes.some((c) => c.type === "remove");
-
-    // 有实质性变化时保存历史（但撤销/重做时不保存）
-    if ((hasPositionChange || hasRemove) && !isUndoingRef.current) {
-      saveToHistory();
-    }
-
-    onNodesChange(changes);
+    const hasRemove = changes.some((c) => c.type === "remove");                  // 是否有节点被删除
+    const shouldSave = (hasPositionEnd || hasRemove) && !isUndoing;              // 判断是否需要保存历史
+    if (shouldSave) saveToHistory();                                             // 保存历史
+    onNodesChange(changes);                                                      // 执行原本的变化处理
   }, [onNodesChange, saveToHistory, isUndoingRef]);
 
   /**
-   * 处理连线变化
+   * 连线变化（删除等）
    */
   const handleEdgesChange = useCallback((changes) => {
-    const hasRemove = changes.some((c) => c.type === "remove");
-
-    if (hasRemove && !isUndoingRef.current) {
-      saveToHistory();
-    }
-
-    onEdgesChange(changes);
+    const isUndoing = isUndoingRef.current;                                      // 是否正在撤销/重做
+    const hasRemove = changes.some((c) => c.type === "remove");                  // 是否有连线被删除
+    const shouldSave = hasRemove && !isUndoing;                                  // 判断是否需要保存历史
+    if (shouldSave) saveToHistory();                                             // 保存历史
+    onEdgesChange(changes);                                                      // 执行原本的变化处理
   }, [onEdgesChange, saveToHistory, isUndoingRef]);
 
-  // ========== 拖拽创建节点 ==========
+  // ==================== 拖拽创建节点 ====================
 
   /**
-   * 处理拖拽放置
-   * 用户从节点面板拖拽节点到画布时触发
+   * 拖拽放置（从节点面板拖拽节点到画布）
    */
   const handleDrop = useCallback((event) => {
-    event.preventDefault();
-
-    // 获取拖拽的节点类型
-    const nodeKey = event.dataTransfer.getData("application/reactflow");
-    if (!nodeKey) return;
-
-    // 把屏幕坐标转换成画布坐标
-    const position = screenToFlowPosition({
+    event.preventDefault();                                                      // 阻止默认行为
+    const nodeKey = event.dataTransfer.getData("application/reactflow");         // 获取拖拽的节点类型
+    if (!nodeKey) return;                                                        // 如果没有节点类型，不处理
+    const position = screenToFlowPosition({                                      // 把屏幕坐标转换成画布坐标
       x: event.clientX,
       y: event.clientY,
     });
-
-    // 创建新节点
-    saveToHistory();
-    const newId = `node-${nodeIdCounterRef.current++}`;
-    const newNode = createNode(newId, nodeKey, position);
-    setNodes((nds) => nds.concat(newNode));
+    saveToHistory();                                                             // 保存历史
+    const newId = `node-${nodeIdCounterRef.current++}`;                          // 生成新节点ID
+    const newNode = createNode(newId, nodeKey, position);                        // 创建新节点
+    setNodes((nodes) => nodes.concat(newNode));                                  // 添加到画布
   }, [screenToFlowPosition, setNodes, saveToHistory, nodeIdCounterRef]);
 
   /**
@@ -153,24 +122,21 @@ const useFlowEvents = (
    * 必须阻止默认行为，否则 onDrop 不会触发
    */
   const handleDragOver = useCallback((event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
+    event.preventDefault();                                                      // 阻止默认行为
+    event.dataTransfer.dropEffect = "move";                                      // 设置拖拽效果
   }, []);
 
+  // ==================== 返回所有事件处理函数 ====================
+
   return {
-    // 连线事件
-    handleConnect,         // 新建连线
-    handleReconnectStart,  // 开始重连
-    handleReconnect,       // 重连成功
-    handleReconnectEnd,    // 重连结束
-    
-    // 状态变化
-    handleNodesChange,     // 节点变化
-    handleEdgesChange,     // 连线变化
-    
-    // 拖拽创建
-    handleDrop,            // 放置节点
-    handleDragOver,        // 允许放置
+    handleConnect,                                                               // 新建连线
+    handleReconnectStart,                                                        // 开始重连
+    handleReconnect,                                                             // 重连成功
+    handleReconnectEnd,                                                          // 重连结束
+    handleNodesChange,                                                           // 节点变化
+    handleEdgesChange,                                                           // 连线变化
+    handleDrop,                                                                  // 拖拽放置
+    handleDragOver,                                                              // 允许拖拽
   };
 };
 
