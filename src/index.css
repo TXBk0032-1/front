@@ -63,3 +63,44 @@ h1 {
 a:hover {
   color: #747bff;
 }
+
+/* ========== React Flow 选中节点样式 ========== */
+
+/**
+ * 隐藏默认的框选矩形
+ *
+ * 问题：react-flow__nodesselection-rect 的图层高于节点
+ * 导致右键无法穿透点击到节点，无法弹出右键菜单
+ *
+ * 解决方案：隐藏选框，改用节点自身的选中样式来区分
+ */
+.react-flow__nodesselection-rect {
+  display: none !important;
+}
+
+/**
+ * 选中节点的样式
+ *
+ * 使用发光效果和边框来标识选中状态
+ * 这样用户可以清楚地看到哪些节点被选中
+ */
+.react-flow__node.selected .container {
+  /* 发光边框效果 */
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.9),
+    0 0 15px 5px rgba(137, 146, 235, 0.6);
+  
+  /* 轻微放大效果 */
+  transform: scale(1.02);
+  
+  /* 平滑过渡 */
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/**
+ * 未选中节点的默认过渡
+ * 确保取消选中时有平滑的动画效果
+ */
+.react-flow__node .container {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
