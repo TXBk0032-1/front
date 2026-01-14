@@ -32,16 +32,17 @@ const MenuItem = ({ icon, label, onClick }) => (
 
 /**
  * NodeContextMenu - 右键菜单主体
- * 
+ *
  * @param {number} x - 菜单X坐标
  * @param {number} y - 菜单Y坐标
  * @param {string} position - 菜单位置：'below' 显示在节点下方，'above' 显示在节点上方
+ * @param {number} scale - 缩放比例，菜单会随画布缩放
  * @param {function} onCopyPaste - 复制并粘贴回调
  * @param {function} onDelete - 删除回调
  * @param {function} onRename - 重命名回调
  * @param {function} onClose - 关闭菜单回调
  */
-const NodeContextMenu = ({ x, y, position = 'below', onCopyPaste, onDelete, onRename, onClose }) => {
+const NodeContextMenu = ({ x, y, position = 'below', scale = 1, onCopyPaste, onDelete, onRename, onClose }) => {
   
   /**
    * 处理菜单项点击
@@ -52,8 +53,11 @@ const NodeContextMenu = ({ x, y, position = 'below', onCopyPaste, onDelete, onRe
     onClose();                                                                   // 关闭菜单
   };
 
+  // 限制缩放范围，避免菜单太大或太小
+  const clampedScale = Math.max(0.5, Math.min(1.5, scale));
+
   // 根据位置计算样式
-  // 使用 transform 实现精确居中
+  // 使用 transform 实现精确居中和缩放
   // x 是节点中心的屏幕坐标，使用 translateX(-50%) 让菜单水平居中
   // 如果是 'above'，菜单显示在节点上方，使用 translateY(-100%) 让菜单在 y 坐标上方
   // 如果是 'below'，菜单显示在节点下方，直接使用 top: y
@@ -61,12 +65,14 @@ const NodeContextMenu = ({ x, y, position = 'below', onCopyPaste, onDelete, onRe
     ? {
         left: x,
         top: y,
-        transform: 'translate(-50%, -100%)'                                      // 水平居中 + 向上偏移整个菜单高度
+        transform: `translate(-50%, -100%) scale(${clampedScale})`,              // 水平居中 + 向上偏移 + 缩放
+        transformOrigin: 'center bottom',                                        // 缩放原点在底部中心
       }
     : {
         left: x,
         top: y,
-        transform: 'translateX(-50%)'                                            // 仅水平居中
+        transform: `translateX(-50%) scale(${clampedScale})`,                    // 水平居中 + 缩放
+        transformOrigin: 'center top',                                           // 缩放原点在顶部中心
       };
 
   return (

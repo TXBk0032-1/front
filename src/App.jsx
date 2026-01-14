@@ -1,6 +1,6 @@
 /**
  * App.jsx - 蓝图编辑器主入口
- * 
+ *
  * 这个文件是整个应用的"总控室"，负责：
  * 1. 初始化各个功能模块
  * 2. 把模块连接到画布事件上
@@ -14,12 +14,14 @@ import "@xyflow/react/dist/style.css";                                          
 import BaseNode from "./components/BaseNode";                                    // 自定义节点组件
 import NodeBox from "./components/NodeBox";                                      // 左侧节点面板
 import NodeContextMenu from "./components/NodeContextMenu";                      // 右键菜单
+import PropertyPanel from "./components/PropertyPanel";                          // 属性面板
 import RenameModal from "./components/RenameModal";                              // 重命名弹窗
 
 import useHistory from "./hooks/useHistory";                                     // 撤销/重做功能
 import useClipboard from "./hooks/useClipboard";                                 // 复制/粘贴功能
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";                 // 键盘快捷键
 import useContextMenu from "./hooks/useContextMenu";                             // 右键菜单控制
+import usePropertyPanel from "./hooks/usePropertyPanel";                         // 属性面板控制
 import useRename from "./hooks/useRename";                                       // 重命名功能
 import useNodeActions from "./hooks/useNodeActions";                             // 节点操作（复制、删除）
 import useFlowEvents from "./hooks/useFlowEvents";                               // 画布事件处理
@@ -49,6 +51,7 @@ function FlowCanvas() {
   const history = useHistory(nodes, edges, setNodes, setEdges);                  // 历史记录模块：管理撤销/重做
   const clipboard = useClipboard(nodes, setNodes, createNode, nodeIdCounter, history.saveToHistory);  // 剪贴板模块：管理复制/粘贴
   const contextMenu = useContextMenu(nodes);                                     // 右键菜单模块：管理菜单显示/隐藏
+  const propertyPanel = usePropertyPanel(nodes, setNodes, history.saveToHistory);  // 属性面板模块：管理属性编辑
   const rename = useRename(nodes, setNodes, history.saveToHistory);              // 重命名模块：管理重命名弹窗
   const nodeActions = useNodeActions(nodes, setNodes, setEdges, nodeIdCounter, history.saveToHistory);  // 节点操作模块：复制、删除
   const flowEvents = useFlowEvents(setNodes, setEdges, onNodesChange, onEdgesChange, history.saveToHistory, history.isUndoingRef, nodeIdCounter);  // 画布事件模块
@@ -62,24 +65,48 @@ function FlowCanvas() {
     paste: clipboard.paste,                                                      // Ctrl+V -> 粘贴
   });
 
-  // ==================== 第四步：定义右键菜单的操作 ====================
+  // ==================== 第四步：定义节点右键事件处理 ====================
+
+  /**
+   * 节点右键事件处理
+   * 同时打开右键菜单和属性面板（仅单选时显示属性面板）
+   */
+  const handleNodeContextMenu = (event, node) => {
+    contextMenu.openContextMenu(event, node);                                    // 打开右键菜单
+    
+    // 判断是否为单选（只有单选时才显示属性面板）
+    const selectedNodes = nodes.filter((n) => n.selected);
+    const isClickedNodeSelected = selectedNodes.some((n) => n.id === node.id);
+    const isSingleNode = !isClickedNodeSelected || selectedNodes.length <= 1;
+    
+    if (isSingleNode) {
+      propertyPanel.openPropertyPanel(node.id);                                  // 打开属性面板
+    } else {
+      propertyPanel.closePropertyPanel();                                        // 多选时关闭属性面板
+    }
+  };
+
+  // ==================== 第五步：定义右键菜单的操作 ====================
 
   const handleMenuCopyPaste = () => {                                            // 菜单点击"复制并粘贴"
     if (!contextMenu.contextMenu) return;                                        // 如果菜单没打开，不执行
     nodeActions.duplicateNodes(contextMenu.contextMenu.nodeIds);                 // 复制选中的节点
     contextMenu.closeContextMenu();                                              // 关闭菜单
+    propertyPanel.closePropertyPanel();                                          // 关闭属性面板
   };
 
   const handleMenuDelete = () => {                                               // 菜单点击"删除"
     if (!contextMenu.contextMenu) return;                                        // 如果菜单没打开，不执行
     nodeActions.deleteNodes(contextMenu.contextMenu.nodeIds);                    // 删除选中的节点
     contextMenu.closeContextMenu();                                              // 关闭菜单
+    propertyPanel.closePropertyPanel();                                          // 关闭属性面板
   };
 
   const handleMenuRename = () => {                                               // 菜单点击"重命名"
     if (!contextMenu.contextMenu) return;                                        // 如果菜单没打开，不执行
     rename.openRenameModal(contextMenu.contextMenu.nodeIds);                     // 打开重命名弹窗（支持多节点）
     contextMenu.closeContextMenu();                                              // 关闭菜单
+    propertyPanel.closePropertyPanel();                                          // 关闭属性面板
   };
 
   // ==================== 第五步：给节点注入双击回调 ====================
@@ -106,7 +133,7 @@ function FlowCanvas() {
         onDrop={flowEvents.handleDrop}                                           // 拖拽放置时的回调
         onDragOver={flowEvents.handleDragOver}                                   // 拖拽经过时的回调
         onMouseMove={clipboard.trackMousePosition}                               // 鼠标移动时记录位置（用于粘贴定位）
-        onNodeContextMenu={contextMenu.openContextMenu}                          // 节点右键时的回调
+        onNodeContextMenu={handleNodeContextMenu}                                // 节点右键时的回调
         onPaneContextMenu={contextMenu.handlePaneContextMenu}                    // 画布空白处右键时的回调
         onPaneClick={contextMenu.handlePaneClick}                                // 画布空白处点击时的回调
         onNodeClick={contextMenu.handleNodeClick}                                // 节点点击时的回调
@@ -125,15 +152,30 @@ function FlowCanvas() {
       />
 
       {/* 右键菜单 */}
-      {contextMenu.contextMenu && (                                              // 如果菜单打开了
+      {contextMenu.contextMenu && contextMenu.menuPosition && (                  // 如果菜单打开了且位置有效
         <NodeContextMenu
-          x={contextMenu.contextMenu.x}                                          // 菜单X坐标
-          y={contextMenu.contextMenu.y}                                          // 菜单Y坐标
-          position={contextMenu.contextMenu.position}                            // 菜单位置：'above' 或 'below'
+          x={contextMenu.menuPosition.x}                                         // 菜单X坐标（动态计算）
+          y={contextMenu.menuPosition.y}                                         // 菜单Y坐标（动态计算）
+          position={contextMenu.menuPosition.position}                           // 菜单位置：'above' 或 'below'
+          scale={contextMenu.menuPosition.scale}                                 // 缩放比例
           onCopyPaste={handleMenuCopyPaste}                                      // 复制并粘贴的回调
           onDelete={handleMenuDelete}                                            // 删除的回调
           onRename={handleMenuRename}                                            // 重命名的回调
           onClose={contextMenu.closeContextMenu}                                 // 关闭菜单的回调
+        />
+      )}
+
+      {/* 属性面板 */}
+      {propertyPanel.propertyPanel && propertyPanel.panelPosition && propertyPanel.panelNodeInfo && (
+        <PropertyPanel
+          x={propertyPanel.panelPosition.x}                                      // 面板X坐标（动态计算）
+          y={propertyPanel.panelPosition.y}                                      // 面板Y坐标（动态计算）
+          position={propertyPanel.panelPosition.position}                        // 面板位置：'above' 或 'below'
+          scale={propertyPanel.panelPosition.scale}                              // 缩放比例
+          nodeLabel={propertyPanel.panelNodeInfo.nodeLabel}                      // 节点名称
+          params={propertyPanel.panelNodeInfo.params}                            // 参数配置
+          paramValues={propertyPanel.panelNodeInfo.paramValues}                  // 当前参数值
+          onParamChange={propertyPanel.handleParamChange}                        // 参数变化回调
         />
       )}
 

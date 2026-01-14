@@ -1,29 +1,72 @@
 /**
  * useContextMenu - 右键菜单控制
- * 
+ *
  * 管理节点右键菜单的显示和隐藏
  * 支持多选：如果右键点击的节点在选中列表里，就操作所有选中的节点
- * 支持动态位置：根据节点在屏幕上的位置决定菜单显示在上方还是下方
+ * 支持动态跟随：菜单会跟随节点移动和画布缩放
  */
 
-import { useState, useCallback, useEffect } from "react";                        // React hooks
-import { useReactFlow } from "@xyflow/react";                                    // React Flow hooks
+import { useState, useCallback, useEffect, useMemo } from "react";               // React hooks
+import { useReactFlow, useViewport } from "@xyflow/react";                       // React Flow hooks
 
 
 const useContextMenu = (nodes) => {
   
-  // 菜单状态：null 表示关闭，否则包含 { x, y, nodeIds, position }
+  // 菜单状态：null 表示关闭，否则包含 { targetNodeId, nodeIds }
+  // 注意：不再存储固定的 x, y 坐标，而是存储目标节点ID，每次渲染时动态计算位置
   const [contextMenu, setContextMenu] = useState(null);
   
   // 获取 React Flow 实例，用于坐标转换
   const { getNode, flowToScreenPosition } = useReactFlow();
+  
+  // 获取视口状态（缩放比例），用于让菜单跟随缩放
+  const viewport = useViewport();
+
+  // ==================== 计算菜单位置 ====================
+
+  /**
+   * 根据目标节点ID动态计算菜单位置
+   * 菜单固定显示在节点上方
+   */
+  const menuPosition = useMemo(() => {
+    if (!contextMenu) return null;                                               // 菜单没打开，不计算
+    
+    const nodeData = getNode(contextMenu.targetNodeId);                          // 获取目标节点数据
+    if (!nodeData) return null;                                                  // 节点不存在，不显示菜单
+    
+    // 获取节点的高度（使用 measured 或默认值）
+    const nodeHeight = nodeData.measured?.height || 100;
+    
+    // 注意：nodeOrigin 是 [0.5, 0.5]，所以 nodeData.position 是节点中心的坐标
+    // 将节点的 flow 坐标转换为屏幕坐标
+    const nodeCenterScreen = flowToScreenPosition({
+      x: nodeData.position.x,
+      y: nodeData.position.y,
+    });
+    
+    // 计算节点顶部的屏幕位置
+    const nodeTopScreen = flowToScreenPosition({
+      x: nodeData.position.x,
+      y: nodeData.position.y - nodeHeight / 2,
+    });
+    
+    // 菜单与节点的间距（会随缩放变化）
+    const menuGap = 10 * viewport.zoom;
+    
+    // 菜单固定显示在节点上方
+    return {
+      x: nodeCenterScreen.x,
+      y: nodeTopScreen.y - menuGap,
+      position: 'above',                                                         // 固定在上方
+      scale: viewport.zoom,
+    };
+  }, [contextMenu, getNode, flowToScreenPosition, viewport]);
 
   // ==================== 打开菜单 ====================
 
   /**
    * 打开右键菜单
    * 智能判断：如果点击的节点已被选中，就操作所有选中的节点
-   * 动态位置：根据节点在屏幕上的位置决定菜单显示在上方还是下方
    */
   const openContextMenu = useCallback((event, node) => {
     event.preventDefault();                                                      // 阻止浏览器默认右键菜单
@@ -38,61 +81,11 @@ const useContextMenu = (nodes) => {
       targetNodeIds = [node.id];                                                 // 只操作点击的这一个节点
     }
     
-    // 获取节点信息
-    const nodeData = getNode(node.id);
-    if (!nodeData) return;
-    
-    // 获取节点的高度（使用 measured 或默认值）
-    const nodeHeight = nodeData.measured?.height || 100;
-    
-    // 注意：nodeOrigin 是 [0.5, 0.5]，所以 nodeData.position 是节点中心的坐标
-    // 将节点的 flow 坐标转换为屏幕坐标
-    // 计算节点中心点的屏幕位置（position 已经是中心）
-    const nodeCenterScreen = flowToScreenPosition({
-      x: nodeData.position.x,
-      y: nodeData.position.y,
-    });
-    
-    // 计算节点顶部和底部的屏幕位置
-    // 由于 position 是中心，顶部 = 中心 - 高度/2，底部 = 中心 + 高度/2
-    const nodeTopScreen = flowToScreenPosition({
-      x: nodeData.position.x,
-      y: nodeData.position.y - nodeHeight / 2,
-    });
-    const nodeBottomScreen = flowToScreenPosition({
-      x: nodeData.position.x,
-      y: nodeData.position.y + nodeHeight / 2,
-    });
-    
-    // 判断节点在屏幕的上半部分还是下半部分
-    const screenHeight = window.innerHeight;
-    const isNodeInUpperHalf = nodeCenterScreen.y < screenHeight / 2;
-    
-    // 菜单与节点的间距
-    const menuGap = 10;
-    
-    let menuX, menuY, position;
-    
-    // 菜单 X 坐标：节点中心的屏幕 X 坐标（CSS transform 会处理居中）
-    menuX = nodeCenterScreen.x;
-    
-    if (isNodeInUpperHalf) {
-      // 节点在上半部分，菜单显示在节点正下方
-      menuY = nodeBottomScreen.y + menuGap;
-      position = 'below';
-    } else {
-      // 节点在下半部分，菜单显示在节点正上方
-      menuY = nodeTopScreen.y - menuGap;
-      position = 'above';
-    }
-    
     setContextMenu({                                                             // 设置菜单状态
-      x: menuX,                                                                  // 菜单X坐标（节点中心）
-      y: menuY,                                                                  // 菜单Y坐标
-      nodeIds: targetNodeIds,                                                    // 目标节点ID列表
-      position: position,                                                        // 菜单位置：'above' 或 'below'
+      targetNodeId: node.id,                                                     // 目标节点ID（用于计算位置）
+      nodeIds: targetNodeIds,                                                    // 要操作的节点ID列表
     });
-  }, [nodes, getNode, flowToScreenPosition]);
+  }, [nodes]);
 
   // ==================== 关闭菜单 ====================
 
@@ -154,7 +147,8 @@ const useContextMenu = (nodes) => {
   // ==================== 返回 ====================
 
   return {
-    contextMenu,                                                                 // 菜单状态
+    contextMenu,                                                                 // 菜单状态（包含 nodeIds）
+    menuPosition,                                                                // 菜单位置（动态计算的 x, y, position, scale）
     openContextMenu,                                                             // 打开菜单
     closeContextMenu,                                                            // 关闭菜单
     handlePaneContextMenu,                                                       // 画布右键处理
