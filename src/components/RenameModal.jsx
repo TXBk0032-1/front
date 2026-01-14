@@ -1,9 +1,12 @@
 /**
  * RenameModal - 重命名弹窗
- * 
+ *
  * 用于修改节点名称的弹窗
  * 居中显示，带遮罩层
- * 
+ *
+ * 单选模式：标题"节点重命名"，输入框显示当前名称
+ * 多选模式：标题"批量节点重命名"，输入框为空，placeholder显示"多值"
+ *
  * 触发方式：
  * 1. 右键菜单点击"重命名"
  * 2. 双击节点
@@ -14,7 +17,7 @@ import { Button, Input, Label, TextField } from "@heroui/react";                
 import "./RenameModal.css";                                                      // 样式
 
 
-const RenameModal = ({ isOpen, onClose, currentName, onConfirm }) => {
+const RenameModal = ({ isOpen, onClose, currentName, isMultiple, onConfirm }) => {
   
   const [inputValue, setInputValue] = useState("");                              // 输入框的值
   const inputRef = useRef(null);                                                 // 输入框引用（用于聚焦）
@@ -29,17 +32,21 @@ const RenameModal = ({ isOpen, onClose, currentName, onConfirm }) => {
     if (!justOpened) return;                                                     // 不是刚打开，不处理
     
     setTimeout(() => {                                                           // 延迟执行（等DOM渲染完）
-      setInputValue(currentName);                                                // 设置输入框初始值
+      setInputValue(isMultiple ? "" : currentName);                              // 多选时为空，单选时为当前名称
       inputRef.current?.focus();                                                 // 聚焦输入框
-      inputRef.current?.select();                                                // 选中文字
+      if (!isMultiple) inputRef.current?.select();                               // 单选时选中文字
     }, 50);
-  }, [isOpen, currentName]);
+  }, [isOpen, currentName, isMultiple]);
 
   // ==================== 确认重命名 ====================
 
   const handleConfirm = () => {
     const trimmedValue = inputValue.trim();                                      // 去除首尾空格
-    if (!trimmedValue || trimmedValue === currentName) {                         // 如果为空或没变化
+    if (!trimmedValue) {                                                         // 如果为空
+      onClose();                                                                 // 直接关闭
+      return;
+    }
+    if (!isMultiple && trimmedValue === currentName) {                           // 单选模式下没变化
       onClose();                                                                 // 直接关闭
       return;
     }
@@ -64,13 +71,16 @@ const RenameModal = ({ isOpen, onClose, currentName, onConfirm }) => {
 
   if (!isOpen) return null;                                                      // 弹窗未打开，不渲染
 
+  const title = isMultiple ? "批量节点重命名" : "节点重命名";                      // 标题
+  const placeholder = isMultiple ? "多值" : currentName;                         // placeholder
+
   return (
     <div className="rename-modal-overlay" onClick={handleOverlayClick}>          {/* 遮罩层 */}
       <div className="rename-modal">                                             {/* 弹窗主体 */}
         
         {/* 标题 */}
         <div className="rename-modal-header">
-          <h3 className="rename-modal-title">重命名节点</h3>
+          <h3 className="rename-modal-title">{title}</h3>
         </div>
         
         {/* 输入框 */}
@@ -82,7 +92,7 @@ const RenameModal = ({ isOpen, onClose, currentName, onConfirm }) => {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}                    // 输入时更新值
               onKeyDown={handleKeyDown}                                          // 键盘事件
-              placeholder="请输入节点名称"
+              placeholder={placeholder}
             />
           </TextField>
         </div>

@@ -36,16 +36,16 @@ import * as flowConfig from "./config/flowConfig";                              
  * 把各个功能模块初始化好，然后绑定到画布的事件上
  */
 function FlowCanvas() {
-  
+
   // ==================== 第一步：准备基础数据 ====================
-  
+
   const nodeTypes = useMemo(() => ({ baseNode: BaseNode }), []);                 // 注册自定义节点类型
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);          // 节点状态：当前画布上的所有节点
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);          // 连线状态：当前画布上的所有连线
   const nodeIdCounter = useRef(INITIAL_NODE_ID);                                 // 节点ID计数器：用于生成唯一ID
 
   // ==================== 第二步：初始化功能模块 ====================
-  
+
   const history = useHistory(nodes, edges, setNodes, setEdges);                  // 历史记录模块：管理撤销/重做
   const clipboard = useClipboard(nodes, setNodes, createNode, nodeIdCounter, history.saveToHistory);  // 剪贴板模块：管理复制/粘贴
   const contextMenu = useContextMenu(nodes);                                     // 右键菜单模块：管理菜单显示/隐藏
@@ -54,7 +54,7 @@ function FlowCanvas() {
   const flowEvents = useFlowEvents(setNodes, setEdges, onNodesChange, onEdgesChange, history.saveToHistory, history.isUndoingRef, nodeIdCounter);  // 画布事件模块
 
   // ==================== 第三步：注册键盘快捷键 ====================
-  
+
   useKeyboardShortcuts({                                                         // 绑定快捷键到对应功能
     undo: history.undo,                                                          // Ctrl+Z -> 撤销
     redo: history.redo,                                                          // Ctrl+Y -> 重做
@@ -63,27 +63,27 @@ function FlowCanvas() {
   });
 
   // ==================== 第四步：定义右键菜单的操作 ====================
-  
+
   const handleMenuCopyPaste = () => {                                            // 菜单点击"复制并粘贴"
     if (!contextMenu.contextMenu) return;                                        // 如果菜单没打开，不执行
     nodeActions.duplicateNodes(contextMenu.contextMenu.nodeIds);                 // 复制选中的节点
     contextMenu.closeContextMenu();                                              // 关闭菜单
   };
-  
+
   const handleMenuDelete = () => {                                               // 菜单点击"删除"
     if (!contextMenu.contextMenu) return;                                        // 如果菜单没打开，不执行
     nodeActions.deleteNodes(contextMenu.contextMenu.nodeIds);                    // 删除选中的节点
     contextMenu.closeContextMenu();                                              // 关闭菜单
   };
-  
+
   const handleMenuRename = () => {                                               // 菜单点击"重命名"
     if (!contextMenu.contextMenu) return;                                        // 如果菜单没打开，不执行
-    rename.openRenameModal(contextMenu.contextMenu.nodeIds[0]);                  // 打开重命名弹窗（只能重命名第一个）
+    rename.openRenameModal(contextMenu.contextMenu.nodeIds);                     // 打开重命名弹窗（支持多节点）
     contextMenu.closeContextMenu();                                              // 关闭菜单
   };
 
   // ==================== 第五步：给节点注入双击回调 ====================
-  
+
   const nodesWithCallbacks = useMemo(() => {                                     // 给每个节点添加双击回调
     return nodes.map((node) => ({                                                // 遍历所有节点
       ...node,                                                                   // 保留原有属性
@@ -92,7 +92,7 @@ function FlowCanvas() {
   }, [nodes, rename.openRenameModal]);
 
   // ==================== 第六步：渲染界面 ====================
-  
+
   return (
     <>
       {/* 画布主体 */}
@@ -129,7 +129,6 @@ function FlowCanvas() {
         <NodeContextMenu
           x={contextMenu.contextMenu.x}                                          // 菜单X坐标
           y={contextMenu.contextMenu.y}                                          // 菜单Y坐标
-          nodeCount={contextMenu.contextMenu.nodeIds.length}                     // 选中的节点数量
           onCopyPaste={handleMenuCopyPaste}                                      // 复制并粘贴的回调
           onDelete={handleMenuDelete}                                            // 删除的回调
           onRename={handleMenuRename}                                            // 重命名的回调
@@ -142,6 +141,7 @@ function FlowCanvas() {
         isOpen={rename.isRenameOpen}                                             // 弹窗是否打开
         onClose={rename.closeRenameModal}                                        // 关闭弹窗的回调
         currentName={rename.renameTarget?.currentName || ""}                     // 当前节点名称
+        isMultiple={rename.isMultiple}                                           // 是否多选模式
         onConfirm={rename.confirmRename}                                         // 确认重命名的回调
       />
     </>

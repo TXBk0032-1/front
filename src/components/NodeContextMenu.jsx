@@ -1,10 +1,8 @@
 /**
  * NodeContextMenu - 节点右键菜单
- * 
+ *
  * 右键点击节点时显示的菜单
- * 
- * 单选模式（1个节点）：复制并粘贴、删除、重命名
- * 多选模式（多个节点）：复制并粘贴、删除（隐藏重命名）
+ * 统一显示三个选项：复制并粘贴、删除、重命名
  */
 
 import "./NodeContextMenu.css";                                                  // 样式
@@ -32,7 +30,7 @@ const MenuItem = ({ icon, label, onClick }) => (
 /**
  * NodeContextMenu - 右键菜单主体
  */
-const NodeContextMenu = ({ x, y, nodeCount = 1, onCopyPaste, onDelete, onRename, onClose }) => {
+const NodeContextMenu = ({ x, y, onCopyPaste, onDelete, onRename, onClose }) => {
   
   /**
    * 处理菜单项点击
@@ -43,17 +41,11 @@ const NodeContextMenu = ({ x, y, nodeCount = 1, onCopyPaste, onDelete, onRename,
     onClose();                                                                   // 关闭菜单
   };
 
-  const isMultiple = nodeCount > 1;                                              // 是否多选模式
-  const copyLabel = isMultiple ? `复制并粘贴 (${nodeCount}个)` : "复制并粘贴";    // 复制按钮文字
-  const deleteLabel = isMultiple ? `删除节点 (${nodeCount}个)` : "删除节点";      // 删除按钮文字
-
   return (
     <div className="context-menu" style={{ left: x, top: y }}>                   {/* 菜单容器 */}
-      <MenuItem icon={copyPasteIcon} label={copyLabel} onClick={() => handleClick(onCopyPaste)} />
-      <MenuItem icon={deleteIcon} label={deleteLabel} onClick={() => handleClick(onDelete)} />
-      {!isMultiple && (                                                          // 多选时隐藏重命名
-        <MenuItem icon={renameIcon} label="重命名" onClick={() => handleClick(onRename)} />
-      )}
+      <MenuItem icon={copyPasteIcon} label="复制并粘贴" onClick={() => handleClick(onCopyPaste)} />
+      <MenuItem icon={deleteIcon} label="删除节点" onClick={() => handleClick(onDelete)} />
+      <MenuItem icon={renameIcon} label="重命名" onClick={() => handleClick(onRename)} />
     </div>
   );
 };
