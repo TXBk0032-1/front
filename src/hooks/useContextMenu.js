@@ -3,21 +3,27 @@
  * 
  * 管理节点右键菜单的显示和隐藏
  * 支持多选：如果右键点击的节点在选中列表里，就操作所有选中的节点
+ * 支持动态位置：根据节点在屏幕上的位置决定菜单显示在上方还是下方
  */
 
 import { useState, useCallback, useEffect } from "react";                        // React hooks
+import { useReactFlow } from "@xyflow/react";                                    // React Flow hooks
 
 
 const useContextMenu = (nodes) => {
   
-  // 菜单状态：null 表示关闭，否则包含 { x, y, nodeIds }
+  // 菜单状态：null 表示关闭，否则包含 { x, y, nodeIds, position }
   const [contextMenu, setContextMenu] = useState(null);
+  
+  // 获取 React Flow 实例，用于坐标转换
+  const { getNode, flowToScreenPosition } = useReactFlow();
 
   // ==================== 打开菜单 ====================
 
   /**
    * 打开右键菜单
    * 智能判断：如果点击的节点已被选中，就操作所有选中的节点
+   * 动态位置：根据节点在屏幕上的位置决定菜单显示在上方还是下方
    */
   const openContextMenu = useCallback((event, node) => {
     event.preventDefault();                                                      // 阻止浏览器默认右键菜单
@@ -32,12 +38,61 @@ const useContextMenu = (nodes) => {
       targetNodeIds = [node.id];                                                 // 只操作点击的这一个节点
     }
     
-    setContextMenu({                                                             // 设置菜单状态
-      x: event.clientX,                                                          // 菜单X坐标
-      y: event.clientY,                                                          // 菜单Y坐标
-      nodeIds: targetNodeIds,                                                    // 目标节点ID列表
+    // 获取节点信息
+    const nodeData = getNode(node.id);
+    if (!nodeData) return;
+    
+    // 获取节点的高度（使用 measured 或默认值）
+    const nodeHeight = nodeData.measured?.height || 100;
+    
+    // 注意：nodeOrigin 是 [0.5, 0.5]，所以 nodeData.position 是节点中心的坐标
+    // 将节点的 flow 坐标转换为屏幕坐标
+    // 计算节点中心点的屏幕位置（position 已经是中心）
+    const nodeCenterScreen = flowToScreenPosition({
+      x: nodeData.position.x,
+      y: nodeData.position.y,
     });
-  }, [nodes]);
+    
+    // 计算节点顶部和底部的屏幕位置
+    // 由于 position 是中心，顶部 = 中心 - 高度/2，底部 = 中心 + 高度/2
+    const nodeTopScreen = flowToScreenPosition({
+      x: nodeData.position.x,
+      y: nodeData.position.y - nodeHeight / 2,
+    });
+    const nodeBottomScreen = flowToScreenPosition({
+      x: nodeData.position.x,
+      y: nodeData.position.y + nodeHeight / 2,
+    });
+    
+    // 判断节点在屏幕的上半部分还是下半部分
+    const screenHeight = window.innerHeight;
+    const isNodeInUpperHalf = nodeCenterScreen.y < screenHeight / 2;
+    
+    // 菜单与节点的间距
+    const menuGap = 10;
+    
+    let menuX, menuY, position;
+    
+    // 菜单 X 坐标：节点中心的屏幕 X 坐标（CSS transform 会处理居中）
+    menuX = nodeCenterScreen.x;
+    
+    if (isNodeInUpperHalf) {
+      // 节点在上半部分，菜单显示在节点正下方
+      menuY = nodeBottomScreen.y + menuGap;
+      position = 'below';
+    } else {
+      // 节点在下半部分，菜单显示在节点正上方
+      menuY = nodeTopScreen.y - menuGap;
+      position = 'above';
+    }
+    
+    setContextMenu({                                                             // 设置菜单状态
+      x: menuX,                                                                  // 菜单X坐标（节点中心）
+      y: menuY,                                                                  // 菜单Y坐标
+      nodeIds: targetNodeIds,                                                    // 目标节点ID列表
+      position: position,                                                        // 菜单位置：'above' 或 'below'
+    });
+  }, [nodes, getNode, flowToScreenPosition]);
 
   // ==================== 关闭菜单 ====================
 

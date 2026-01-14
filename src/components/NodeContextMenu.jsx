@@ -16,10 +16,13 @@ import renameIcon from "../assets/ContextMenu/rename.svg";                      
 
 /**
  * MenuItem - 单个菜单项
+ * 使用新的卡片式布局：图标在上，文字在下
  */
 const MenuItem = ({ icon, label, onClick }) => (
-  <div className="menu-item" onClick={onClick}>
-    <img src={icon} alt={label} className="menu-icon" />                         {/* 图标 */}
+  <div className="context-menu-item" onClick={onClick}>
+    <div className="icon-container">                                             {/* 图标容器 */}
+      <img src={icon} alt={label} className="menu-icon" />                       {/* 图标 */}
+    </div>
     <span className="menu-label">{label}</span>                                  {/* 文字 */}
   </div>
 );
@@ -29,8 +32,16 @@ const MenuItem = ({ icon, label, onClick }) => (
 
 /**
  * NodeContextMenu - 右键菜单主体
+ * 
+ * @param {number} x - 菜单X坐标
+ * @param {number} y - 菜单Y坐标
+ * @param {string} position - 菜单位置：'below' 显示在节点下方，'above' 显示在节点上方
+ * @param {function} onCopyPaste - 复制并粘贴回调
+ * @param {function} onDelete - 删除回调
+ * @param {function} onRename - 重命名回调
+ * @param {function} onClose - 关闭菜单回调
  */
-const NodeContextMenu = ({ x, y, onCopyPaste, onDelete, onRename, onClose }) => {
+const NodeContextMenu = ({ x, y, position = 'below', onCopyPaste, onDelete, onRename, onClose }) => {
   
   /**
    * 处理菜单项点击
@@ -41,9 +52,26 @@ const NodeContextMenu = ({ x, y, onCopyPaste, onDelete, onRename, onClose }) => 
     onClose();                                                                   // 关闭菜单
   };
 
+  // 根据位置计算样式
+  // 使用 transform 实现精确居中
+  // x 是节点中心的屏幕坐标，使用 translateX(-50%) 让菜单水平居中
+  // 如果是 'above'，菜单显示在节点上方，使用 translateY(-100%) 让菜单在 y 坐标上方
+  // 如果是 'below'，菜单显示在节点下方，直接使用 top: y
+  const positionStyle = position === 'above'
+    ? {
+        left: x,
+        top: y,
+        transform: 'translate(-50%, -100%)'                                      // 水平居中 + 向上偏移整个菜单高度
+      }
+    : {
+        left: x,
+        top: y,
+        transform: 'translateX(-50%)'                                            // 仅水平居中
+      };
+
   return (
-    <div className="context-menu" style={{ left: x, top: y }}>                   {/* 菜单容器 */}
-      <MenuItem icon={copyPasteIcon} label="复制并粘贴" onClick={() => handleClick(onCopyPaste)} />
+    <div className="context-menu" style={positionStyle}>                         {/* 菜单容器 */}
+      <MenuItem icon={copyPasteIcon} label="复制粘贴" onClick={() => handleClick(onCopyPaste)} />
       <MenuItem icon={deleteIcon} label="删除节点" onClick={() => handleClick(onDelete)} />
       <MenuItem icon={renameIcon} label="重命名" onClick={() => handleClick(onRename)} />
     </div>

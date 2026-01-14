@@ -129,6 +129,7 @@ function FlowCanvas() {
         <NodeContextMenu
           x={contextMenu.contextMenu.x}                                          // 菜单X坐标
           y={contextMenu.contextMenu.y}                                          // 菜单Y坐标
+          position={contextMenu.contextMenu.position}                            // 菜单位置：'above' 或 'below'
           onCopyPaste={handleMenuCopyPaste}                                      // 复制并粘贴的回调
           onDelete={handleMenuDelete}                                            // 删除的回调
           onRename={handleMenuRename}                                            // 重命名的回调
