@@ -44,10 +44,10 @@ const StringInput = ({ label, value, onChange }) => (
 
 /** 布尔开关 - HeroUI v3 结构 */
 const BooleanSwitch = ({ label, value, onChange }) => (
-  <div className="param-item param-item-switch">
+  <div className="param-item">
     <span className="param-label">{label}</span>
     <Switch
-      size="sm"
+      size="md"
       isSelected={value}
       onChange={onChange}
     >

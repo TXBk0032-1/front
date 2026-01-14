@@ -34,18 +34,13 @@
   overflow-y: auto;
 }
 
-/* 参数项 */
+/* 参数项 - 统一水平排列 */
 .param-item {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-/* 开关类型的参数项，水平排列 */
-.param-item-switch {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 /* 参数标签 */
