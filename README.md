@@ -561,7 +561,7 @@ const currentValue = paramValues[paramKey] ?? paramConfig.default;
 
 | 误区 | 正确理解 |
 |------|----------|
-| "`??` 和 `||` 一样" | **错误**！`??` 只对 null/undefined 生效，`||` 对所有假值（0, "", false, null, undefined）生效。 |
+| "`??` 和 `那个两个竖杠` 一样" | **错误**！`??` 只对 null/undefined 生效，`那个两个竖杠` 对所有假值（0, "", false, null, undefined）生效。 |
 | "`?.` 可以用于赋值" | **错误**！`?.` 只能用于读取，不能用于赋值。`obj?.prop = 1` 是错误的。 |
 
 ---
