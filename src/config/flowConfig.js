@@ -43,10 +43,28 @@ export const FLOW_CONFIG = {
 
 // ========== 容器样式（应用最外层的样式） ==========
 
-export const CONTAINER_STYLE = {
+/** 最外层容器：垂直布局（上：菜单栏，下：工作区） */
+export const APP_CONTAINER_STYLE = {
   display: "flex",                                                               // flex 布局
-  flexDirection: "row",                                                          // 水平排列（左边节点面板，右边画布）
+  flexDirection: "column",                                                       // 垂直排列（菜单栏在上，工作区在下）
   width: "100vw",                                                                // 宽度占满屏幕
   height: "100vh",                                                               // 高度占满屏幕
   background: "#e2e9faff",                                                       // 背景色（浅蓝灰色）
+};
+
+/** 工作区容器：水平布局（左：节点面板，右：画布） */
+export const WORKSPACE_STYLE = {
+  display: "flex",                                                               // flex 布局
+  flexDirection: "row",                                                          // 水平排列（左边节点面板，右边画布）
+  flex: 1,                                                                       // 占据剩余空间
+  overflow: "hidden",                                                            // 防止溢出
+};
+
+// 兼容旧代码（已弃用，使用 APP_CONTAINER_STYLE + WORKSPACE_STYLE 替代）
+export const CONTAINER_STYLE = {
+  display: "flex",
+  flexDirection: "row",
+  width: "100vw",
+  height: "100vh",
+  background: "#e2e9faff",
 };

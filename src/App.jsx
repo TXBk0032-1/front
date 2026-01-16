@@ -7,7 +7,7 @@
 
 // ========== 第一部分：导入依赖 ==========
 
-import { useMemo, useRef } from "react";                                         // React 基础 hooks
+import { useMemo, useRef, forwardRef, useImperativeHandle } from "react";        // React 基础 hooks
 import { ReactFlow, useNodesState, useEdgesState, ReactFlowProvider } from "@xyflow/react";  // React Flow 核心
 import "@xyflow/react/dist/style.css";                                           // React Flow 样式
 
@@ -16,6 +16,7 @@ import NodeBox from "./components/NodeBox";                                     
 import NodeContextMenu from "./components/NodeContextMenu";                      // 右键菜单
 import PropertyPanel from "./components/PropertyPanel";                          // 属性面板
 import RenameModal from "./components/RenameModal";                              // 重命名弹窗
+import TopMenu from "./components/TopMenu";                                      // 顶部菜单栏
 
 import useHistory from "./hooks/useHistory";                                     // 撤销/重做功能
 import useClipboard from "./hooks/useClipboard";                                 // 复制/粘贴功能
@@ -28,12 +29,12 @@ import useFlowEvents from "./hooks/useFlowEvents";                              
 
 import { createNode } from "./utils/createNode";                                 // 创建节点的工具函数
 import { initialNodes, initialEdges, INITIAL_NODE_ID } from "./config/initialData";  // 初始数据
-import { FLOW_CONFIG, CONTAINER_STYLE } from "./config/flowConfig";              // 画布配置
+import { FLOW_CONFIG, APP_CONTAINER_STYLE, WORKSPACE_STYLE } from "./config/flowConfig";  // 画布配置
 
 
 // ========== 第二部分：画布组件 ==========
 
-function FlowCanvas() {
+const FlowCanvas = forwardRef(function FlowCanvas(props, ref) {
   
   // ---------- 步骤1：注册节点类型 ----------
   const nodeTypes = useMemo(() => ({ baseNode: BaseNode }), []);                 // 告诉ReactFlow我们有哪些自定义节点
@@ -42,6 +43,22 @@ function FlowCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);          // 画布上的所有节点
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);          // 画布上的所有连线
   const nodeIdCounter = useRef(INITIAL_NODE_ID);                                 // 新节点的ID从这个数字开始
+
+  // ---------- 暴露方法给父组件 ----------
+  useImperativeHandle(ref, () => ({
+    // 获取蓝图数据（用于导出）
+    getBlueprint: () => ({
+      nodes: nodes.map(n => ({ ...n, data: { ...n.data, onDoubleClick: undefined } })),  // 移除回调函数
+      edges: edges,
+      nodeIdCounter: nodeIdCounter.current,
+    }),
+    // 设置蓝图数据（用于导入）
+    setBlueprint: (data) => {
+      if (data.nodes) setNodes(data.nodes);
+      if (data.edges) setEdges(data.edges);
+      if (data.nodeIdCounter) nodeIdCounter.current = data.nodeIdCounter;
+    },
+  }), [nodes, edges, setNodes, setEdges]);
 
   // ---------- 步骤3：初始化功能模块 ----------
   const history = useHistory(nodes, edges, setNodes, setEdges);                  // 历史记录（撤销/重做）
@@ -126,7 +143,7 @@ function FlowCanvas() {
       {renderRenameModal(rename)}
     </>
   );
-}
+});
 
 
 // ========== 第三部分：辅助函数（纯逻辑，无副作用） ==========
@@ -197,13 +214,44 @@ function renderRenameModal(rename) {
 // ========== 第五部分：应用入口 ==========
 
 function App() {
+  const flowCanvasRef = useRef(null);                                            // 画布组件的引用
+
+  // ---------- 导出蓝图功能 ----------
+  const handleExport = () => {
+    if (!flowCanvasRef.current) return;
+    
+    const blueprint = flowCanvasRef.current.getBlueprint();                      // 获取蓝图数据
+    const jsonString = JSON.stringify(blueprint, null, 2);                       // 转为 JSON 字符串
+    const blob = new Blob([jsonString], { type: "application/json" });           // 创建 Blob
+    const url = URL.createObjectURL(blob);                                       // 生成下载链接
+    
+    const a = document.createElement("a");                                       // 创建下载链接
+    a.href = url;
+    a.download = `blueprint-${Date.now()}.json`;                                 // 文件名带时间戳
+    a.click();                                                                   // 触发下载
+    URL.revokeObjectURL(url);                                                    // 释放链接
+  };
+
+  // ---------- 导入蓝图功能 ----------
+  const handleImport = (data) => {
+    if (!flowCanvasRef.current) return;
+    if (!data.nodes || !data.edges) {
+      alert("导入失败：蓝图数据格式不正确");
+      return;
+    }
+    flowCanvasRef.current.setBlueprint(data);                                    // 设置蓝图数据
+  };
+
   return (
-    <div style={CONTAINER_STYLE}>                                                {/* 整体容器 */}
-      <NodeBox />                                                                {/* 左侧节点面板 */}
-      <div style={{ flex: 1, height: "100%" }}>                                  {/* 右侧画布容器 */}
-        <ReactFlowProvider>                                                      {/* ReactFlow上下文 */}
-          <FlowCanvas />                                                         {/* 画布组件 */}
-        </ReactFlowProvider>
+    <div style={APP_CONTAINER_STYLE}>                                            {/* 最外层：垂直布局 */}
+      <TopMenu onExport={handleExport} onImport={handleImport} />                {/* 顶部菜单栏 */}
+      <div style={WORKSPACE_STYLE}>                                              {/* 工作区：水平布局 */}
+        <NodeBox />                                                              {/* 左侧节点面板 */}
+        <div style={{ flex: 1, height: "100%" }}>                                {/* 右侧画布容器 */}
+          <ReactFlowProvider>                                                    {/* ReactFlow上下文 */}
+            <FlowCanvas ref={flowCanvasRef} />                                   {/* 画布组件（带引用） */}
+          </ReactFlowProvider>
+        </div>
       </div>
     </div>
   );
