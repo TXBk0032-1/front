@@ -1948,7 +1948,7 @@ createRoot(document.getElementById('root')).render(
 ```jsx
 // ========== 第一部分：导入依赖 ==========
 
-import { useMemo, useRef } from "react";                                         // React 基础 hooks
+import { useMemo, useRef, forwardRef, useImperativeHandle } from "react";        // React 基础 hooks
 import { ReactFlow, useNodesState, useEdgesState, ReactFlowProvider } from "@xyflow/react";  // React Flow 核心
 import "@xyflow/react/dist/style.css";                                           // React Flow 样式
 
@@ -1957,6 +1957,7 @@ import NodeBox from "./components/NodeBox";                                     
 import NodeContextMenu from "./components/NodeContextMenu";                      // 右键菜单
 import PropertyPanel from "./components/PropertyPanel";                          // 属性面板
 import RenameModal from "./components/RenameModal";                              // 重命名弹窗
+import TopMenu from "./components/TopMenu";                                      // 顶部菜单栏
 
 import useHistory from "./hooks/useHistory";                                     // 撤销/重做功能
 import useClipboard from "./hooks/useClipboard";                                 // 复制/粘贴功能
@@ -1966,68 +1967,111 @@ import usePropertyPanel from "./hooks/usePropertyPanel";                        
 import useRename from "./hooks/useRename";                                       // 重命名功能
 import useNodeActions from "./hooks/useNodeActions";                             // 节点操作（复制、删除）
 import useFlowEvents from "./hooks/useFlowEvents";                               // 画布事件处理
+import getLayoutedElements from "./hooks/useGetLayoutedElements";                // 自动布局功能
+import useWebSocket from "./hooks/useWebSocket";                                 // WebSocket 通信
 
 import { createNode } from "./utils/createNode";                                 // 创建节点的工具函数
+import { updateNodeRegistry } from "./constants/nodeRegistry";                   // 更新节点注册表
 import { initialNodes, initialEdges, INITIAL_NODE_ID } from "./config/initialData";  // 初始数据
-import { FLOW_CONFIG, CONTAINER_STYLE } from "./config/flowConfig";              // 画布配置
+import { FLOW_CONFIG, APP_CONTAINER_STYLE, WORKSPACE_STYLE } from "./config/flowConfig";  // 画布配置
 ```
 
-**导入分类**：
-1. **React 核心**：`useMemo`, `useRef` - React 内置钩子
-2. **React Flow**：画布库的核心组件和钩子
-3. **UI 组件**：5 个自定义组件
-4. **功能钩子**：8 个自定义钩子
-5. **工具和配置**：工具函数和配置文件
+**导入分类详解**：
+
+| 类别 | 包含内容 | 作用说明 |
+|------|----------|----------|
+| **React 核心** | `useMemo`, `useRef`, `forwardRef`, `useImperativeHandle` | React 的基础零件。`forwardRef`（引用转发）和 `useImperativeHandle`（内部方法暴露）是本次更新的核心，它们像是在父子组件之间搭建了一座“指挥桥”，让顶部菜单可以指挥画布进行自动布局。 |
+| **React Flow** | `ReactFlow`, `useNodesState`, `useEdgesState` | 整个蓝图编辑器的“心脏”。它提供了画板、节点拖拽、连线等基础功能，让我们不用从零开始写画板。 |
+| **UI 组件** | `BaseNode`, `NodeBox`, `TopMenu` 等 | 构成界面的可见零件。`TopMenu` 是新增加的顶部导航，包含了保存、加载、运行等重要按钮。 |
+| **功能钩子 (Hooks)** | `useHistory`, `useWebSocket` | 封装了复杂的背后逻辑。`useWebSocket` 是关键，它负责通过网络和后端的 Python 服务器“打电话”交流。 |
+| **配置与工具** | `createNode`, `FLOW_CONFIG` | 存放一些全局通用的“标准参数”和“生产节点的配方”。 |
+
+**小白通俗解读导入 (Import)**：
+想像你在组装一台高级乐高机器人。`import` 就像是从不同的乐高零件盒里把“手臂”、“马达”、“控制器”拿出来放在工作台上。只有把这些零件先拿出来（导入），后面的代码才能指挥它们怎么组装。
 
 ---
 
-### App.jsx - 主组件（第二部分：FlowCanvas 组件）
+### App.jsx - 主组件（第二部分：FlowCanvas 画布核心）
+
+`FlowCanvas` 是整个编辑器的“核心画板”。在这次大改中，我们使用了 `forwardRef` 技术，把它变成了一个可以被“远程操控”的组件。
 
 ```jsx
-function FlowCanvas() {
+const FlowCanvas = forwardRef(function FlowCanvas(props, ref) {
   
   // ---------- 步骤1：注册节点类型 ----------
+  // 告诉 React Flow：当我们说 "baseNode" 时，请使用我们写的 BaseNode.jsx 组件来渲染
   const nodeTypes = useMemo(() => ({ baseNode: BaseNode }), []);
 
   // ---------- 步骤2：初始化画布数据 ----------
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const nodeIdCounter = useRef(INITIAL_NODE_ID);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);          // 存储画板上所有的“方块”（节点）
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);          // 存储画板上所有的“线条”（连线）
+  const nodeIdCounter = useRef(INITIAL_NODE_ID);                                 // 记录下一个新节点的编号，防止重名
+
+  // ---------- 暴露方法给父组件（App） ----------
+  // 这部分是新增加的，它像是在 FlowCanvas 上安装了几个“远程按钮”
+  useImperativeHandle(ref, () => ({
+    // 按钮1：获取蓝图数据（用于点击“导出”时，把画板内容打包成文件）
+    getBlueprint: () => ({
+      nodes: nodes.map(n => ({ ...n, data: { ...n.data, onDoubleClick: undefined } })),  // 导出时清理掉临时的双击功能
+      edges: edges,
+      nodeIdCounter: nodeIdCounter.current,
+    }),
+    // 按钮2：设置蓝图数据（用于点击“导入”时，把文件内容铺到画板上）
+    setBlueprint: (data) => {
+      if (data.nodes) setNodes(data.nodes);
+      if (data.edges) setEdges(data.edges);
+      if (data.nodeIdCounter) nodeIdCounter.current = data.nodeIdCounter;
+    },
+    // 按钮3：自动布局（调用 ELK 算法，把乱糟糟的节点排整齐）
+    autoLayout: async () => {
+      const elkOptions = {
+        "elk.algorithm": "layered",                                              // 使用“分层”算法
+        "elk.layered.spacing.nodeNodeBetweenLayers": "100",                      // 层与层之间的距离
+        "elk.spacing.nodeNode": "80",                                            // 节点之间的距离
+        "elk.direction": "RIGHT",                                                // 从左往右排
+      };
+      const layouted = await getLayoutedElements(nodes, edges, elkOptions);      // 计算新位置
+      if (layouted) {
+        setNodes(layouted.nodes);                                                // 更新节点位置
+        setEdges(layouted.edges);                                                // 更新连线位置
+      }
+    },
+  }), [nodes, edges, setNodes, setEdges]);
 
   // ---------- 步骤3：初始化功能模块 ----------
-  const history = useHistory(nodes, edges, setNodes, setEdges);
-  const clipboard = useClipboard(nodes, setNodes, createNode, nodeIdCounter, history.saveToHistory);
-  const contextMenu = useContextMenu(nodes);
-  const propertyPanel = usePropertyPanel(nodes, setNodes, history.saveToHistory);
-  const rename = useRename(nodes, setNodes, history.saveToHistory);
-  const nodeActions = useNodeActions(nodes, setNodes, setEdges, nodeIdCounter, history.saveToHistory);
-  const flowEvents = useFlowEvents(setNodes, setEdges, onNodesChange, onEdgesChange, history.saveToHistory, history.isUndoingRef, nodeIdCounter);
+  // 这里引入了我们写的所有“超能力”钩子
+  const history = useHistory(nodes, edges, setNodes, setEdges);                  // 撤销/重做
+  const clipboard = useClipboard(nodes, setNodes, createNode, nodeIdCounter, history.saveToHistory);  // 复制/粘贴
+  const contextMenu = useContextMenu(nodes);                                     // 右键菜单
+  const propertyPanel = usePropertyPanel(nodes, setNodes, history.saveToHistory);  // 属性面板
+  const rename = useRename(nodes, setNodes, history.saveToHistory);              // 重命名
+  const nodeActions = useNodeActions(nodes, setNodes, setEdges, nodeIdCounter, history.saveToHistory);  // 节点操作
+  const flowEvents = useFlowEvents(setNodes, setEdges, onNodesChange, onEdgesChange, history.saveToHistory, history.isUndoingRef, nodeIdCounter);  // 画布事件
 
   // ---------- 步骤4：绑定键盘快捷键 ----------
   useKeyboardShortcuts({
-    undo: history.undo,
-    redo: history.redo,
-    copy: clipboard.copy,
-    paste: clipboard.paste,
+    undo: history.undo,                                                          // Ctrl+Z
+    redo: history.redo,                                                          // Ctrl+Y
+    copy: clipboard.copy,                                                        // Ctrl+C
+    paste: clipboard.paste,                                                      // Ctrl+V
   });
   // ... 后续代码
-}
+});
 ```
 
-**逐步解释**：
+**核心概念深度解读**：
 
-| 步骤 | 代码 | 作用 |
-|------|------|------|
-| 1 | `nodeTypes = useMemo(...)` | 注册自定义节点类型，用 useMemo 缓存避免重复创建 |
-| 2 | `useNodesState/useEdgesState` | 初始化节点和连线数据，返回状态和更新函数 |
-| 2 | `nodeIdCounter = useRef(5)` | 节点 ID 计数器，从 5 开始（因为初始有 4 个节点） |
-| 3 | 各种 `use*` 钩子 | 初始化各个功能模块，传入需要的依赖 |
-| 4 | `useKeyboardShortcuts` | 绑定快捷键到对应的功能函数 |
+| 概念 | 作用 | 小白通俗理解 |
+|------|------|--------------|
+| **forwardRef** | 引用转发 | 就像是给组件装了一个“提手”。父组件 App 可以通过这个提手直接拎起 FlowCanvas，并调用它内部的方法。 |
+| **useImperativeHandle** | 暴露接口 | 就像是给 FlowCanvas 定义了一套“外部指令集”。它规定了父组件 App 只能调用 `getBlueprint`、`setBlueprint` 和 `autoLayout` 这三个指令，不能乱动其他的。 |
+| **nodeIdCounter** | ID 计数器 | 就像是超市的排队取号机。每创建一个新节点，就取一个新号码，确保每个节点在世界上都是唯一的。 |
+| **autoLayout** | 自动布局 | 就像是一个“整理房间”的机器人。当你把节点扔得满地都是时，点一下它，它就会按照预设的规则（从左到右、保持间距）把节点摆放整齐。 |
 
-**为什么用 useMemo 包裹 nodeTypes？**
-- React Flow 会检查 nodeTypes 是否变化
-- 如果每次渲染都创建新对象，会导致不必要的重新渲染
-- useMemo 确保只有依赖变化时才创建新对象
+**为什么要把 FlowCanvas 拆出来并使用 forwardRef？**
+1. **职责分离**：App 组件负责顶部的菜单和全局状态，FlowCanvas 负责画板的渲染。
+2. **性能优化**：画板的操作非常频繁（比如拖拽），拆分后可以减少不必要的整体刷新。
+3. **跨组件通信**：顶部菜单（TopMenu）里的按钮需要操作画板（比如点击“整理布局”），通过 `forwardRef` 暴露的方法，App 组件可以轻松地把指令传达给画板。
 
 ---
 
@@ -2136,69 +2180,181 @@ return (
 
 ---
 
-### App.jsx - 主组件（第五部分：辅助函数和入口）
+### App.jsx - 主组件（第五部分：应用入口与全局控制）
+
+这是整个应用的“总指挥部”。它负责把顶部菜单、左侧面板和右侧画布组装在一起，并处理所有跨组件的逻辑（如导入导出、运行蓝图）。
 
 ```jsx
-// ========== 第三部分：辅助函数（纯逻辑，无副作用） ==========
-
-/** 检查是否为单选模式 */
-function checkIsSingleSelect(nodes, clickedNode) {
-  const selectedNodes = nodes.filter((n) => n.selected);                         // 获取所有选中的节点
-  const isClickedNodeSelected = selectedNodes.some((n) => n.id === clickedNode.id);  // 点击的节点是否在选中列表里
-  const isSingleNode = !isClickedNodeSelected || selectedNodes.length <= 1;      // 判断是否单选
-  return isSingleNode;
-}
-
-// ========== 第四部分：渲染函数（纯UI，无逻辑） ==========
-
-/** 渲染右键菜单 */
-function renderContextMenu(contextMenu, onCopyPaste, onDelete, onRename) {
-  const shouldShow = contextMenu.contextMenu && contextMenu.menuPosition;
-  if (!shouldShow) return null;
-  
-  return (
-    <NodeContextMenu
-      x={contextMenu.menuPosition.x}
-      y={contextMenu.menuPosition.y}
-      position={contextMenu.menuPosition.position}
-      scale={contextMenu.menuPosition.scale}
-      onCopyPaste={onCopyPaste}
-      onDelete={onDelete}
-      onRename={onRename}
-      onClose={contextMenu.closeContextMenu}
-    />
-  );
-}
-
-// ========== 第五部分：应用入口 ==========
-
 function App() {
+  const flowCanvasRef = useRef(null);                                            // 创建一个“遥控器”，指向画布组件
+  const ws = useWebSocket();                                                     // 初始化 WebSocket，准备和后端说话
+
+  // ---------- 导出蓝图功能 ----------
+  const handleExport = () => {
+    if (!flowCanvasRef.current) return;
+    
+    const blueprint = flowCanvasRef.current.getBlueprint();                      // 1. 通过遥控器从画布拿数据
+    const jsonString = JSON.stringify(blueprint, null, 2);                       // 2. 把数据转成 JSON 字符串
+    const blob = new Blob([jsonString], { type: "application/json" });           // 3. 创建一个虚拟的“文件对象”
+    const url = URL.createObjectURL(blob);                                       // 4. 生成一个临时的下载链接
+    
+    const a = document.createElement("a");                                       // 5. 模拟点击下载
+    a.href = url;
+    a.download = `blueprint-${Date.now()}.json`;                                 // 文件名带上时间戳
+    a.click();
+    URL.revokeObjectURL(url);                                                    // 6. 释放内存
+  };
+
+  // ---------- 导入蓝图功能 ----------
+  const handleImport = (data) => {
+    if (!flowCanvasRef.current) return;
+    if (!data.nodes || !data.edges) {
+      alert("导入失败：蓝图数据格式不正确");
+      return;
+    }
+    flowCanvasRef.current.setBlueprint(data);                                    // 通过遥控器把数据塞进画布
+  };
+
+  // ---------- 自动布局功能 ----------
+  const handleAutoLayout = () => {
+    if (!flowCanvasRef.current) return;
+    flowCanvasRef.current.autoLayout();                                          // 指挥画布自己整理一下
+  };
+
+  // ---------- 获取节点注册表功能 ----------
+  const handleGetRegistry = async () => {
+    try {
+      const registry = await ws.getRegistry();                                   // 1. 问后端要“零件清单”
+      console.log("✅ 成功获取节点注册表:", registry);
+      updateNodeRegistry(registry);                                              // 2. 更新前端的全局清单
+    } catch (error) {
+      alert("获取节点注册表失败：" + error.message);
+    }
+  };
+
+  // ---------- 运行蓝图功能 ----------
+  const handleRunBlueprint = async () => {
+    if (!flowCanvasRef.current) return;
+
+    const blueprint = flowCanvasRef.current.getBlueprint();                      // 1. 拿到当前的蓝图设计
+    if (!blueprint.nodes || blueprint.nodes.length === 0) {
+      alert("蓝图中没有节点");
+      return;
+    }
+
+    try {
+      const result = await ws.runBlueprint(blueprint, {});                       // 2. 把设计图发给后端去执行
+      console.log("✅ 蓝图运行结果:", result);
+    } catch (error) {
+      alert("运行蓝图失败：" + error.message);
+    }
+  };
+
   return (
-    <div style={CONTAINER_STYLE}>                                                {/* 整体容器 */}
-      <NodeBox />                                                                {/* 左侧节点面板 */}
-      <div style={{ flex: 1, height: "100%" }}>                                  {/* 右侧画布容器 */}
-        <ReactFlowProvider>                                                      {/* ReactFlow上下文 */}
-          <FlowCanvas />                                                         {/* 画布组件 */}
-        </ReactFlowProvider>
+    <div style={APP_CONTAINER_STYLE}>                                            {/* 最外层：垂直布局 */}
+      <TopMenu
+        onExport={handleExport}
+        onImport={handleImport}
+        onAutoLayout={handleAutoLayout}
+        onGetRegistry={handleGetRegistry}
+        onRunBlueprint={handleRunBlueprint}
+        isConnected={ws.isConnected}
+        isConnecting={ws.isConnecting}
+      />  {/* 顶部菜单栏 */}
+      <div style={WORKSPACE_STYLE}>                                              {/* 工作区：水平布局 */}
+        <NodeBox registry={ws.registry} />                                       {/* 左侧节点面板 */}
+        <div style={{ flex: 1, height: "100%" }}>                                {/* 右侧画布容器 */}
+          <ReactFlowProvider>                                                    {/* ReactFlow 上下文 */}
+            <FlowCanvas ref={flowCanvasRef} />                                   {/* 画布组件（带遥控器接收器） */}
+          </ReactFlowProvider>
+        </div>
       </div>
     </div>
   );
 }
 ```
 
-**代码组织原则**：
-- **辅助函数**：纯函数，只做计算，不修改状态
-- **渲染函数**：只负责 UI 渲染，逻辑判断简单
-- **入口组件**：只负责布局和组装
+**关键逻辑拆解**：
 
-**为什么需要 ReactFlowProvider？**
-- React Flow 的钩子（如 useReactFlow）需要在 Provider 内部使用
-- Provider 提供了画布的上下文信息
-- FlowCanvas 组件内部使用了这些钩子
+| 功能 | 实现原理 | 小白通俗理解 |
+|------|----------|--------------|
+| **导出蓝图** | `JSON.stringify` + `Blob` | 就像是把画板上的乐高模型拍个照，然后把照片和零件清单存进一个 JSON 文件里。 |
+| **导入蓝图** | `FileReader` + `setBlueprint` | 就像是读取之前的照片和清单，然后按照清单在画板上重新摆放乐高零件。 |
+| **WebSocket 通信** | `ws.getRegistry` / `runBlueprint` | 就像是给后端的 Python 师傅打电话。前端说：“师傅，给我发一份最新的零件清单”或者“师傅，按我这个图纸跑一下模型”。 |
+| **ReactFlowProvider** | 上下文注入 | 这是一个“能量场”。只有在这个场内部的组件（如 FlowCanvas），才能使用 React Flow 提供的各种高级钩子。 |
+
+**为什么需要 `flowCanvasRef`？**
+在 React 中，数据通常是“从上往下”流动的。但有时候父组件（App）需要主动命令子组件（FlowCanvas）去做某件事（比如“导出数据”）。`ref` 就像是一个**遥控器**，App 拿着遥控器，FlowCanvas 身上装着接收器，这样 App 就能跨越层级直接指挥 FlowCanvas 了。
 
 ---
 
-## 3.2 配置文件
+## 3.2 UI 组件（新增与核心）
+
+### TopMenu.jsx - 顶部导航栏
+
+`TopMenu` 是本次大改新增的组件，它独立于画布之外，负责处理文件操作和后端通信。
+
+```jsx
+function TopMenu({ onExport, onImport, onAutoLayout, onGetRegistry, onRunBlueprint, isConnected, isConnecting }) {
+  
+  // ---------- 处理导入文件选择 ----------
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];                                        // 1. 拿到用户选中的那个文件
+    if (!file) return;
+    
+    const reader = new FileReader();                                             // 2. 创建一个“文件阅读器”
+    reader.onload = (e) => {                                                     // 3. 当阅读器读完文件后执行
+      try {
+        const data = JSON.parse(e.target.result);                                // 4. 把文件内容（字符串）转成 JS 对象
+        if (onImport) onImport(data);                                            // 5. 把数据传给父组件去处理
+      } catch (error) {
+        alert("导入失败：文件格式不正确");
+      }
+    };
+    reader.readAsText(file);                                                     // 6. 开始以文本格式读取文件
+    event.target.value = "";                                                     // 7. 清空选择，方便下次选同一个文件
+  };
+
+  return (
+    <header className="header">
+      <div className="left-area"><h1 className="logo">炼丹蓝图</h1></div>
+      
+      <div className="right-area">
+        {/* 后端通信组 */}
+        <div className="btn-group">
+          <button className={`btn btn-registry ${isConnected ? 'connected' : ''}`} onClick={onGetRegistry}>
+            {isConnecting ? '连接中...' : '获取注册表'}
+          </button>
+          <button className="btn btn-run" onClick={onRunBlueprint}>运行蓝图</button>
+        </div>
+
+        {/* 蓝图操作组 */}
+        <div className="btn-group">
+          <button className="btn btn-layout" onClick={onAutoLayout}>整理布局</button>
+          <button className="btn btn-import" onClick={() => document.getElementById("blueprint-import-input").click()}>导入蓝图</button>
+          <button className="btn btn-export" onClick={onExport}>导出蓝图</button>
+        </div>
+      </div>
+
+      {/* 隐藏的文件输入框：用于触发系统的文件选择弹窗 */}
+      <input id="blueprint-import-input" type="file" accept=".json" className="hidden-input" onChange={handleFileChange} />
+    </header>
+  );
+}
+```
+
+**逐行功能拆解**：
+
+| 代码段 | 功能 | 小白通俗理解 |
+|------|------|--------------|
+| `new FileReader()` | 创建文件读取器 | 就像是请了一个专门识字的“秘书”，帮我们读用户选中的文件。 |
+| `JSON.parse(...)` | 解析 JSON | 就像是把一堆乱糟糟的文字（字符串）按照特定的语法规则整理成我们能看懂的“表格”（对象）。 |
+| `isConnected ? 'connected' : ''` | 动态类名 | 这是一个“变色龙”逻辑。如果连上了后端，按钮就会多一个 `connected` 类，从而在 CSS 里变绿。 |
+| `input type="file"` | 文件上传控件 | 这是一个隐藏的“传送门”。用户点“导入蓝图”时，我们偷偷触发这个传送门，让用户选文件。 |
+
+---
+
+## 3.3 配置文件与注册表
 
 ### flowConfig.js - 画布配置
 
@@ -2297,50 +2453,58 @@ export const INITIAL_NODE_ID = 5;
 
 ---
 
-### nodeRegistry.js - 节点注册表
+### nodeRegistry.js - 动态节点注册表
+
+在大改后的版本中，`nodeRegistry` 不再是一个死板的静态对象，而是一个**可以动态更新**的内存仓库。它支持从后端的 Python 服务器拉取最新的节点定义。
 
 ```javascript
-// ========== 节点注册表数据 ==========
+// 1. 从本地文件读取默认配置（兜底方案，没联网时用这个）
+import defaultNodeRegistry from './node_registry.json';
 
-export const NODE_REGISTRY = {
-  
-  /** 节点分类 */
-  categories: {
-    node_group1: {
-      label: "节点组1",                    // 分类名称
-      color: "rgb(137, 146, 235)",         // 主题色
-      nodes: ["node1", "node2"],           // 包含的节点
-    },
-    node_group2: {
-      label: "节点组2",
-      color: "rgb(242, 177, 144)",
-      nodes: ["node3", "node4"],
-    },
-  },
+// 2. 创建一个可变的注册表变量（初始值为默认配置）
+let NODE_REGISTRY = { ...defaultNodeRegistry };
 
-  /** 节点配置 */
-  nodes: {
-    node1: {
-      label: "节点1",                      // 节点名称
-      inputs: [{ id: "in", label: "" }],   // 输入端口
-      outputs: [{ id: "out", label: "" }], // 输出端口
-      params: {                            // 参数配置
-        param1: { label: "参数1", type: "number", default: 1 },
-        param2: { label: "参数2", type: "boolean", default: false },
-        param3: { label: "参数3", type: "string", default: "3" },
-        // ... 更多参数
-      },
-    },
-    // ... 更多节点
-  },
+/** 核心功能：更新节点注册表 */
+export const updateNodeRegistry = (newRegistry) => {
+  if (newRegistry && newRegistry.categories && newRegistry.nodes) {
+    // A. 清空原本的旧零件清单（但保持引用不变，防止其他地方引用的对象失效）
+    Object.keys(NODE_REGISTRY).forEach(key => delete NODE_REGISTRY[key]);
+    // B. 把新的零件清单塞进去
+    Object.assign(NODE_REGISTRY, newRegistry);
+    console.log("✅ 零件清单已更新");
+    return true;
+  }
+  return false;
 };
 
-// ========== 辅助函数 ==========
-
-/** 根据节点ID获取节点配置 */
-export const getNodeConfig = (nodeKey) => {
-  return NODE_REGISTRY.nodes[nodeKey] || {};
+/** 根据零件 ID 找它的配方（配置） */
+export const getNodeConfig = (nodeKey, registry = null) => {
+  const reg = registry || NODE_REGISTRY;                                         // 优先用传进来的，没有就用全局的
+  return reg.nodes[nodeKey] || {};
 };
+
+/** 根据零件 ID 找它属于哪个零件箱（分类） */
+export const findCategoryByNode = (nodeKey, registry = null) => {
+  const reg = registry || NODE_REGISTRY;
+  const categories = reg.categories;
+  for (const catKey of Object.keys(categories)) {
+    if (categories[catKey].nodes.includes(nodeKey)) return catKey;               // 找到了就返回零件箱的名字
+  }
+  return null;
+};
+```
+
+**为什么设计成“动态更新”？**
+在 AI 领域，新的模型层（节点）层出不穷。如果我们把节点定义写死在前端代码里，每次后端加个功能，前端都要重新编译代码、发布网站，非常麻烦。
+现在这种做法：
+1. **热插拔**：后端 Python 师傅改一下代码，前端点一下“获取注册表”，新功能立马就出现在左侧面板里了。
+2. **一致性**：确保前端看到的参数（输入、输出、调节杆）和后端执行代码要求的参数完全一致，不会因为手抖写错。
+
+**小白深度理解（注册表 Registry）**：
+想象你在经营一家乐高零件店。`nodeRegistry` 就是你的**进货清单**。
+- `defaultNodeRegistry`：是你店里常备的经典款零件。
+- `updateNodeRegistry`：是厂家给你发了一份最新的零件报价单，你把旧单子撕掉，换上新单子。
+- `getNodeConfig`：是客人在问：“那个全连接层零件怎么接线？”你查一下单子告诉他。
 
 /** 根据节点ID找到它属于哪个分类 */
 export const findCategoryByNode = (nodeKey) => {
@@ -2505,9 +2669,95 @@ export function calcPositionAboveNode(nodeData, flowToScreenPosition, zoom) {
 
 ## 3.4 自定义钩子（Hooks）
 
-### useHistory.js - 撤销/重做
+### useWebSocket.js - 远端通信的“电话专线”
+
+`useWebSocket` 是本项目中最具科技感的 Hook。它负责让你的浏览器和后端的 Python 服务器保持实时联络，支持拉取最新节点清单、发送蓝图任务、接收计算结果。
 
 ```javascript
+import { useState, useRef, useCallback, useEffect } from "react";
+
+// 后端服务器的“门牌号”（WebSocket 地址）
+const WS_SERVER_URL = "ws://localhost:8765";
+
+function useWebSocket() {
+  // ---------- 1. 状态定义（信号灯） ----------
+  const [isConnected, setIsConnected] = useState(false);           // 是否连接成功（绿灯）
+  const [isConnecting, setIsConnecting] = useState(false);         // 是否正在拨号（黄灯）
+  const [registry, setRegistry] = useState(null);                  // 存下来的零件清单
+  const wsRef = useRef(null);                                      // 真正的“电话机”对象
+  const messageIdRef = useRef(0);                                  // 给每句话标号，防止听错
+  const pendingRequestsRef = useRef(new Map());                    // 一个小本子，记下“还没回话”的问题
+
+  // ---------- 2. 拨打电话（建立连接） ----------
+  const connect = useCallback(() => {
+    return new Promise((resolve, reject) => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) return resolve(); // 已经通了，不用重拨
+      
+      setIsConnecting(true);                                       // 灯变黄，开始拨号
+      const ws = new WebSocket(WS_SERVER_URL);                     // 拿起电话
+
+      ws.onopen = () => {                                          // 对方接了！
+        setIsConnected(true);                                      // 灯变绿
+        setIsConnecting(false);                                    // 拨号结束
+        wsRef.current = ws;                                        // 把电话机存好
+        resolve();
+      };
+
+      ws.onmessage = (event) => {                                  // 对方说话了
+        const data = JSON.parse(event.data);                       // 把声音转成文字
+        handleMessage(data);                                       // 交给专门的人去处理消息
+      };
+      
+      // ... 处理错误和关闭的回调
+    });
+  }, []);
+
+  // ---------- 3. 说话并等待回信（异步请求） ----------
+  const sendMessage = useCallback(async (message) => {
+    const messageId = `msg-${messageIdRef.current++}-${Date.now()}`; // 生成一个唯一编号
+    const fullMessage = { ...message, id: messageId };             // 把编号贴在信封上
+
+    return new Promise((resolve, reject) => {
+      // 在小本子上记一笔：编号XXX的消息发出了，一旦对方回信了，就叫醒我（resolve）
+      pendingRequestsRef.current.set(messageId, { resolve, reject });
+      
+      wsRef.current.send(JSON.stringify(fullMessage));             // 投递信件
+    });
+  }, [connect]);
+
+  // ---------- 4. 听筒里的内容处理 ----------
+  const handleMessage = useCallback((data) => {
+    const requestId = data.id;                                     // 看看对方回的是哪一封信
+    const pending = pendingRequestsRef.current.get(requestId);     // 查查小本子
+
+    if (pending) {
+      if (data.type === "error") {
+        pending.reject(new Error(data.data.message));              // 对方反馈出错了
+      } else {
+        pending.resolve(data.data);                                // 对方反馈成功了
+      }
+      pendingRequestsRef.current.delete(requestId);                // 处理完了，从本子上擦掉
+    }
+  }, []);
+
+  return { isConnected, isConnecting, registry, getRegistry, runBlueprint };
+}
+```
+
+**核心技术解读（异步请求-响应模式）**：
+由于网络不是瞬间的，我们发出一封信后，不能死等着。`useWebSocket` 采用了**“小本子标记法”**：
+1. **Promise**：这在 JS 里叫“承诺”。`sendMessage` 给你一个承诺：“我发信去了，等回信了我就告诉你结果，你先去干别的。”
+2. **Message ID**：由于信件很多，为了防止张冠李戴（比如问的是零件清单，回的是计算结果），我们必须给每封信打上唯一编号。
+3. **Pending Map**：这个“待处理映射表”就像是酒店前台的寄存处。发信时存一个“等回信”的动作，收信时根据编号取回动作并执行。
+
+**小白通俗解读 WebSocket**：
+如果传统的 HTTP 请求像是**“发邮件”**（你发一封，我回一封，回完就断开），那么 WebSocket 就像是**“通电话”**。
+- 电话一旦接通，两边随时可以说话，不用每次都重新拨号。
+- 本项目用它，是因为运行 AI 蓝图可能需要几秒钟甚至几分钟，我们需要让服务器在算完后主动“喊”我们，而不是我们每秒钟去问一次“算完了没”。
+
+---
+
+### useHistory.js - 撤销/重做
 import { useCallback, useRef } from "react";
 
 const MAX_HISTORY = 50;  // 最多保存50步历史
@@ -2749,96 +2999,296 @@ function getTargetNodeIds(nodes, clickedNode) {
 - 当画布缩放或平移时，`viewport` 变化，位置自动重新计算
 ---
 
-### useFlowEvents.js - 画布事件处理
+### useGetLayoutedElements.js - 自动布局的“整理大师”
+
+这个文件引入了强大的 `ELKjs` 算法库。它的唯一任务就是：当你把节点乱丢在画布上时，它能像一个强迫症整理大师一样，瞬间把它们排得整整齐齐。
 
 ```javascript
-import { useCallback, useRef } from "react";
-import { addEdge, reconnectEdge, useReactFlow } from "@xyflow/react";
+import ELK from "elkjs/lib/elk.bundled.js";
+const elk = new ELK();                                             // 1. 请出整理大师（初始化算法库）
+
+const getLayoutedElements = (nodes, edges, options = {}) => {
+  const isHorizontal = options?.["elk.direction"] === "RIGHT";     // 2. 看看是横着排还是竖着排
+  
+  // 3. 把 React Flow 的数据格式翻译成大师能听懂的“图纸”格式
+  const graph = {
+    id: "root",
+    layoutOptions: options,                                        // 传入间距、方向等参数
+    children: nodes.map((node) => ({
+      ...node,
+      targetPosition: isHorizontal ? "left" : "top",               // 自动调整连线入口位置
+      sourcePosition: isHorizontal ? "right" : "bottom",           // 自动调整连线出口位置
+      width: 150,                                                  // 告诉大师每个方块大概多宽
+      height: 50,                                                  // 告诉大师每个方块大概多高
+    })),
+    edges: edges,
+  };
+
+  // 4. 让大师开始计算位置
+  return elk
+    .layout(graph)
+    .then((layoutedGraph) => ({
+      // 5. 计算完后，把大师给的新坐标（x, y）重新塞回节点里
+      nodes: layoutedGraph.children.map((node) => ({
+        ...node,
+        position: { x: node.x, y: node.y },
+      })),
+      edges: layoutedGraph.edges,
+    }))
+    .catch(console.error);                                         // 如果大师罢工了，打印错误
+};
+
+export default getLayoutedElements;
+```
+
+**为什么需要这个功能？**
+在复杂的 AI 蓝图中，节点可能多达几十个。如果靠手去一个一个对齐，会非常痛苦。
+1. **分层算法**：ELK 擅长处理“有向图”，它能识别出谁是输入，谁是输出，然后把它们按层级排开。
+2. **避免重叠**：算法会自动计算每个节点的大小，确保它们之间不会互相打架（重叠）。
+3. **连线优化**：它会尽量减少连线的交叉，让整个蓝图看起来像电路图一样专业。
+
+**小白通俗解读自动布局**：
+想象你有一堆乱糟糟的乐高零件散在桌子上，它们之间还有细线连着。
+- `getLayoutedElements` 就像是一个**“一键整理”**魔法。
+- 它先看一眼所有的零件和连线（构建 graph）。
+- 然后闭上眼算一下怎么摆最省空间、线最不乱（elk.layout）。
+- 最后睁开眼，把每个零件瞬移到它该去的位置（setNodes）。
+
+---
+
+### useNodeActions.js - 节点的操作“手术刀”
+
+这个 Hook 封装了对节点最直接的两种“手术”操作：**克隆**（复制）和**切除**（删除）。它支持批量操作，也就是说你可以一下复制一堆节点，或者一下删掉一堆节点。
+
+```javascript
+import { useCallback } from "react";
+import { createNode } from "../utils/createNode";
+
+const DUPLICATE_OFFSET = 50;                                                     // 复制时的偏移距离
+
+const useNodeActions = (nodes, setNodes, setEdges, nodeIdCounterRef, saveToHistory) => {
+
+  // ========== 1. 克隆手术 (duplicateNodes) ==========
+  const duplicateNodes = useCallback((nodeIds) => {
+    const ids = Array.isArray(nodeIds) ? nodeIds : [nodeIds];                    // 统一转成数组
+    const targetNodes = nodes.filter((n) => ids.includes(n.id));                 // 找到那些要被复制的节点
+    if (targetNodes.length === 0) return;
+    
+    saveToHistory();                                                             // 动手术前先存档
+    
+    const newNodes = targetNodes.map((targetNode) => {
+      const newId = `node-${nodeIdCounterRef.current++}`;                        // 领个新工号
+      const newPosition = {                                                      // 算个新住址（往右下角挪一点）
+        x: targetNode.position.x + DUPLICATE_OFFSET,
+        y: targetNode.position.y + DUPLICATE_OFFSET,
+      };
+      // 创建新节点，并把旧节点的“自定义名字”也遗传过去
+      const newNode = createNode(newId, targetNode.data.nodeKey, newPosition);
+      if (targetNode.data.customLabel) {
+        newNode.data.customLabel = targetNode.data.customLabel;
+        newNode.data.label = targetNode.data.customLabel;
+      }
+      return newNode;
+    });
+
+    setNodes((currentNodes) => currentNodes.concat(newNodes));                   // 把新克隆出来的节点放进画板
+  }, [nodes, saveToHistory, nodeIdCounterRef, setNodes]);
+
+  // ========== 2. 切除手术 (deleteNodes) ==========
+  const deleteNodes = useCallback((nodeIds) => {
+    const ids = Array.isArray(nodeIds) ? nodeIds : [nodeIds];
+    saveToHistory();                                                             // 存档
+    
+    // A. 删掉节点
+    setNodes((currentNodes) => currentNodes.filter((n) => !ids.includes(n.id)));
+    // B. 删掉跟这些节点相连的所有“线”
+    setEdges((currentEdges) =>
+      currentEdges.filter((edge) => !ids.includes(edge.source) && !ids.includes(edge.target))
+    );
+  }, [saveToHistory, setNodes, setEdges]);
+
+  return { duplicateNodes, deleteNodes };
+};
+```
+
+**手术细节解读**：
+1. **为什么要偏移（Offset）？**
+   如果不偏移，复制出来的节点会和原节点完全重叠，用户会以为点击没反应。偏移 50 像素能让用户一眼看到：“哦！多了一个！”
+2. **为什么要同步删除连线？**
+   在蓝图里，线是依附于节点的。如果节点没了，剩下的线就变成了“断头线”，会导致程序逻辑混乱。所以我们必须在 `deleteNodes` 里确保节点的“社会关系（连线）”也被一并清理干净。
+3. **ID 计数器的重要性**：
+   复制节点时，绝对不能复制 ID。ID 是每个节点的身份证号，必须通过 `nodeIdCounterRef` 获取全新的。
+
+---
+
+### usePropertyPanel.js - 属性面板的“随身管家”
+
+这个 Hook 控制着节点上方那个浮动的“小菜单”（属性面板）。它最厉害的地方在于能够“如影随形”——无论节点怎么动、画布怎么缩放，它都能精准地贴在节点旁边。
+
+```javascript
+import { useState, useCallback, useMemo } from "react";
+import { useReactFlow, useViewport } from "@xyflow/react";
+
+const usePropertyPanel = (nodes, setNodes, saveToHistory) => {
+  const [propertyPanel, setPropertyPanel] = useState(null);                      // 存着“现在在看谁的属性”
+  const { getNode, flowToScreenPosition } = useReactFlow();
+  const viewport = useViewport();                                                // 获取画板的缩放和平移信息
+
+  // ---------- 核心：计算位置（面板该出现在屏幕哪儿？） ----------
+  const panelPosition = useMemo(() => {
+    if (!propertyPanel) return null;
+    const nodeData = getNode(propertyPanel.targetNodeId);                        // 1. 找到节点
+    if (!nodeData) return null;
+    
+    // 2. 调用工具函数，把画板上的坐标转成你眼睛看到的屏幕坐标
+    // 并根据当前的缩放比例（zoom）调整面板的大小和距离
+    return calcPositionBelowNode(nodeData, flowToScreenPosition, viewport.zoom);
+  }, [propertyPanel, getNode, flowToScreenPosition, viewport]);
+
+  // ---------- 核心：修改参数（改了面板里的滑块会发生什么？） ----------
+  const handleParamChange = useCallback((paramKey, newValue) => {
+    if (!propertyPanel) return;
+    saveToHistory();                                                             // 改参数也要存档，方便 Ctrl+Z
+    
+    setNodes((nds) => nds.map((node) => {
+      if (node.id !== propertyPanel.targetNodeId) return node;                   // 不是它，跳过
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          paramValues: { ...node.data.paramValues, [paramKey]: newValue }        // 更新特定的那个参数值
+        }
+      };
+    }));
+  }, [propertyPanel, setNodes, saveToHistory]);
+
+  return { propertyPanel, panelPosition, handleParamChange, ... };
+};
+```
+
+**管家工作细节**：
+1. **数据驱动（Data-Driven）**：
+   当你修改面板里的数字时，代码并没有直接去改界面，而是去改了 `nodes` 数组里的 `paramValues`。React 发现数据变了，就会自动让界面重新画一遍。
+2. **延迟监听（Timeout）**：
+   代码里有一个 `setTimeout` 延迟 100 毫秒添加点击监听。这是为了防止你刚点开面板的一瞬间，因为点击事件还在传递，又把它给关掉了。
+3. **坐标转换**：
+   这是小白最容易晕的地方。画板上的 (100, 100) 在缩放 2 倍后，在屏幕上可能是 (200, 200)。`flowToScreenPosition` 就像是一个**“翻译官”**，确保面板始终能指在正确的地方。
+
+---
+
+### useRename.js - 节点的“改名专家”
+
+管理节点重命名弹窗的显示和逻辑。它支持“双击改名”和“右键改名”，甚至支持你选中一堆节点后，给它们起个统一的名字。
+
+```javascript
+const confirmRename = useCallback((newName) => {
+  if (!renameTarget) return;
+  saveToHistory();                                                               // 存档
+  
+  const targetIds = new Set(renameTarget.nodeIds);                               // 准备好要改名的黑名单（ID集）
+  setNodes((currentNodes) =>
+    currentNodes.map((node) => {
+      if (!targetIds.has(node.id)) return node;                                  // 不在名单里的不管
+      return {
+        ...node,
+        data: { ...node.data, label: newName, customLabel: newName }             // 换上新名字，并打上“已改名”标签
+      };
+    })
+  );
+  setRenameTarget(null);                                                         // 改完关掉弹窗
+}, [renameTarget, setNodes, saveToHistory]);
+```
+
+---
+
+### useFlowEvents.js - 画布的“神经中枢”
+
+这是最繁忙的 Hook，它像是一个交通警察，指挥着节点和连线的所有变化。它处理：你拖动了节点、你连上了一条线、你把零件从左边拽到了画板上。
+
+```javascript
+import { useCallback } from "react";
+import { addEdge, useReactFlow } from "@xyflow/react";
 import { createNode } from "../utils/createNode";
 
 const useFlowEvents = (setNodes, setEdges, onNodesChange, onEdgesChange, saveToHistory, isUndoingRef, nodeIdCounterRef) => {
   
   const { screenToFlowPosition } = useReactFlow();
-  const reconnectSuccessRef = useRef(true);  // 重连是否成功的标记
 
-  // ========== 新建连线 ==========
+  // ========== 1. 连线处理 (handleConnect) ==========
   const handleConnect = useCallback((params) => {
     saveToHistory();
     setEdges((currentEdges) => {
-      const filteredEdges = removeOldConnection(currentEdges, params);  // 删除旧连接
-      return addEdge(params, filteredEdges);  // 添加新连接
+      // 潜规则：一个输入口只能接一根线。如果新接了一根，旧的得自动断开。
+      const filteredEdges = currentEdges.filter((edge) =>
+        !(edge.target === params.target && edge.targetHandle === params.targetHandle)
+      );
+      return addEdge(params, filteredEdges);                                     // 把新线接上去
     });
   }, [setEdges, saveToHistory]);
 
-  // ========== 拖拽创建节点 ==========
+  // ========== 2. 拖拽降落 (handleDrop) ==========
   const handleDrop = useCallback((event) => {
-    event.preventDefault();
-    const nodeKey = event.dataTransfer.getData("application/reactflow");  // 获取节点类型
+    event.preventDefault();                                                      // 阻止浏览器乱开网页
+    const nodeKey = event.dataTransfer.getData("application/reactflow");         // 看看你抓的是哪个零件
     if (!nodeKey) return;
+
+    // 关键：把鼠标在屏幕上的坐标，翻译成画板内部的坐标
     const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
-    saveToHistory();
-    const newId = `node-${nodeIdCounterRef.current++}`;
-    const newNode = createNode(newId, nodeKey, position);
-    setNodes((nodes) => nodes.concat(newNode));
+    
+    saveToHistory();                                                             // 存档
+    const newId = `node-${nodeIdCounterRef.current++}`;                          // 申请身份证
+    const newNode = createNode(newId, nodeKey, position);                        // 生产零件
+    setNodes((nodes) => nodes.concat(newNode));                                  // 放到画板上
   }, [screenToFlowPosition, setNodes, saveToHistory, nodeIdCounterRef]);
 
-  // ========== 节点变化处理 ==========
+  // ========== 3. 变化监听 (handleNodesChange) ==========
   const handleNodesChange = useCallback((changes) => {
-    const shouldSave = checkShouldSaveHistory(changes, isUndoingRef.current);
-    if (shouldSave) saveToHistory();
-    onNodesChange(changes);
+    // 只有在拖拽结束（放手）或者删掉节点时，才需要存档。
+    // 如果拖拽过程中每一毫米都存档，你的电脑会卡死。
+    const shouldSave = changes.some((c) =>
+      (c.type === "position" && c.dragging === false) || c.type === "remove"
+    );
+    if (shouldSave && !isUndoingRef.current) saveToHistory();
+    
+    onNodesChange(changes);                                                      // 告诉 React Flow 正常更新界面
   }, [onNodesChange, saveToHistory, isUndoingRef]);
 
-  return { handleConnect, handleDrop, handleNodesChange, ... };
+  return { handleConnect, handleDrop, handleNodesChange };
 };
-
-/** 删除目标端口的旧连接（输入端口只能有一个连接） */
-function removeOldConnection(edges, params) {
-  return edges.filter((edge) =>
-    !(edge.target === params.target && edge.targetHandle === params.targetHandle)
-  );
-}
-
-/** 判断是否需要保存历史 */
-function checkShouldSaveHistory(changes, isUndoing) {
-  if (isUndoing) return false;  // 撤销时不保存
-  const hasPositionEnd = changes.some((c) => c.type === "position" && c.dragging === false);
-  const hasRemove = changes.some((c) => c.type === "remove");
-  return hasPositionEnd || hasRemove;  // 拖拽结束或删除时保存
-}
 ```
 
-**连线规则**：
-- 输入端口只能有一个连接（新连接会替换旧连接）
-- 输出端口可以有多个连接
+**神经中枢细节解读**：
+1. **一个入口一根线**：这是为了逻辑清晰。如果一个输入口接了两根线，程序就不知道该听谁的了。所以我们在 `handleConnect` 里写了自动替换的逻辑。
+2. **坐标转换 (screenToFlow)**：再次强调！左侧面板是在屏幕上的固定位置，而画板是可以滚动的。如果你不转换坐标，你把零件放在屏幕正中间，它可能会出现在画板的爪哇国去。
+3. **存档优化**：在 `handleNodesChange` 里，我们非常小心地选择了存档时机。只有用户“放手”的那一刻（`dragging === false`），才算完成了一次操作。
 
-**历史记录时机**：
-- 节点拖拽**结束**时保存（不是拖拽过程中）
-- 节点删除时保存
-- 撤销/重做过程中不保存
+---
 ---
 
 ## 3.5 UI 组件
 
-### BaseNode.jsx - 节点组件
+### BaseNode.jsx - 蓝图节点的“万能模板”
+
+这是整个编辑器中最核心的 UI 组件。所有的节点（无论是加法、减法还是神经网络层）都是基于这个模板渲染出来的。它不仅负责长相，还负责一个非常高级的交互：**“拔线重连”**。
 
 ```jsx
 import { Handle, Position, useEdges, useReactFlow } from "@xyflow/react";
 import { Button } from "@heroui/react";
-import "./BaseNode.css";
 
-const DRAG_THRESHOLD = 5;  // 拖拽阈值（像素）
-
-// ========== 输入端口组件 ==========
+// ---------- 1. 输入端口 (InputPort) ----------
 const InputPort = ({ id, label, nodeId }) => {
   const edges = useEdges();
   const { setEdges } = useReactFlow();
 
+  // 核心黑科技：处理“拔线”动作
   const handleMouseDown = (event) => {
-    const connectedEdge = findConnectedEdge(edges, nodeId, id);  // 查找连接到这个端口的线
-    if (!connectedEdge) return;  // 没有连接，让 React Flow 正常处理
-    event.stopPropagation();
-    startDragDetection(event, connectedEdge, setEdges);  // 开始拖拽检测
+    const connectedEdge = edges.find(e => e.target === nodeId && e.targetHandle === id);
+    if (!connectedEdge) return;                                                  // 没线连着，正常连线
+    
+    event.stopPropagation();                                                     // 阻止 React Flow 默认行为
+    
+    // 启动“拖拽检测”：如果你只是点一下，不拔线；如果你拽了超过 5 像素，就断开旧线，开始连新线
+    startDragDetection(event, connectedEdge, setEdges);
   };
 
   return (
@@ -2849,47 +3299,168 @@ const InputPort = ({ id, label, nodeId }) => {
   );
 };
 
-// ========== 输出端口组件 ==========
-const OutputPort = ({ id, label }) => (
-  <div className="port-item">
-    <span className="output-label">{label}</span>
-    <Handle type="source" position={Position.Right} id={id} />
-  </div>
-);
-
-// ========== 节点主体 ==========
+// ---------- 2. 节点主体 (BaseNode) ----------
 const BaseNode = ({ data, id }) => {
-  const color = data.color || "rgb(137, 146, 235)";
-  const label = data.label || "未命名节点";
-  const inputs = data.inputs || [];
-  const outputs = data.outputs || [];
-  const onDoubleClick = data.onDoubleClick;
+  // 从 data 里拿配方：颜色、名字、输入口列表、输出口列表
+  const { color, label, inputs = [], outputs = [], onDoubleClick } = data;
 
   return (
-    <Button className="container" style={{ background: color }} onDoubleClick={() => onDoubleClick?.(id)}>
+    <Button
+      className="container"
+      style={{ background: color }}
+      onDoubleClick={() => onDoubleClick?.(id)}                                  // 双击触发重命名
+    >
+      {/* 左侧：进气口（输入） */}
       <div className="port-container">
-        {inputs.map((port, i) => <InputPort key={`in-${i}`} {...port} nodeId={id} />)}
+        {inputs.map((p, i) => <InputPort key={i} {...p} nodeId={id} />)}
       </div>
+
+      {/* 中间：招牌（标题） */}
       <div className="title-container">
         <div className="title">{label}</div>
       </div>
+
+      {/* 右侧：排气口（输出） */}
       <div className="port-container">
-        {outputs.map((port, i) => <OutputPort key={`out-${i}`} {...port} />)}
+        {outputs.map((p, i) => <OutputPort key={i} {...p} />)}
       </div>
     </Button>
   );
 };
 ```
 
-**"拔出连接线"功能**：
-- 当用户拖拽已连接的输入端口时，会断开连接
-- 然后从源端口开始创建新连接
-- 这是通过模拟 mousedown 事件实现的
+**核心交互：拔线重连（Pull-out Connection）**：
+在普通的编辑器里，如果你想改一根线，你得先删掉它，再重新连。
+本项目的 `BaseNode` 实现了一个**“顺滑”**的操作：
+1. **检测**：当你按住一个已经有线的输入口时，代码会先“按兵不动”。
+2. **判断**：如果你移动了鼠标（超过 5 像素），代码会瞬间做两件事：
+   - **断开**：把旧的那根线从 `edges` 数组里删掉。
+   - **模拟**：在旧线的起点（源端口）上模拟一个“鼠标按下”事件。
+3. **结果**：在用户看来，就像是直接把线从输入口“拔”了出来，然后可以甩到另一个输入口上。
 
-**Handle 组件**：
-- `type="target"` 表示输入端口（接收连线）
-- `type="source"` 表示输出端口（发出连线）
-- `position` 指定端口在节点的哪一边
+**小白通俗解读 BaseNode**：
+想象每个节点都是一个**“带插座的乐高块”**。
+- `Handle`：就是插座。`target` 是插孔（接别人发来的线），`source` 是插头（发线给别人）。
+- `Button`：我们用 HeroUI 的按钮来做外壳，这样节点被点击时会有自然的缩放和阴影变化，手感更好。
+- `inputs.map`：这是一种“自动生产线”。你给它 3 个输入口的定义，它就自动在左边打 3 个孔，不用你手动一个一个画。
+
+---
+
+### NodeContextMenu.jsx - 节点的“右键锦囊”
+
+当你在节点上点右键时，这个组件就会跳出来。它不仅要显示正确的功能，还要**“算准位置”**。
+
+```jsx
+const NodeContextMenu = ({ x, y, position, scale, onCopyPaste, onDelete, onRename, onClose }) => {
+  
+  // 1. 限制缩放：别让菜单变得太大或太小，看不清
+  const clampedScale = Math.max(0.5, Math.min(1.5, scale));
+  
+  // 2. 计算样式：根据是在节点上方还是下方，决定菜单的偏移方向
+  const positionStyle = {
+    left: x,
+    top: y,
+    transform: position === 'above'
+      ? `translate(-50%, -100%) scale(${clampedScale})`                          // 向上弹
+      : `translateX(-50%) scale(${clampedScale})`,                               // 向下弹
+    transformOrigin: position === 'above' ? 'center bottom' : 'center top',
+  };
+
+  return (
+    <div className="context-menu" style={positionStyle}>
+      <MenuItem icon={copyIcon} label="复制粘贴" onClick={onCopyPaste} />
+      <MenuItem icon={deleteIcon} label="删除节点" onClick={onDelete} />
+      <MenuItem icon={renameIcon} label="重命名" onClick={onRename} />
+    </div>
+  );
+};
+```
+
+**细节解读**：
+- **Transform 居中法**：`translateX(-50%)` 是前端常用的居中秘籍。它能让菜单的中心点对准你点击的位置，而不是左上角对准。
+- **Scale 适配**：如果画布缩小到了 0.1 倍，菜单如果不缩放，就会变得像摩天大楼一样大。我们通过 `scale` 参数让菜单的大小和画布保持协调。
+
+---
+
+### NodeBox.jsx - 零件仓库（左侧面板）
+
+这是你“进货”的地方。它负责展示所有可用的节点，并支持**“拖拽出库”**。
+
+```jsx
+const NodeItem = ({ nodeId, color }) => {
+  const handleDragStart = (event) => {
+    // 关键：在拖拽开始时，把节点的“型号”塞进浏览器的“运货车”里
+    event.dataTransfer.setData("application/reactflow", nodeId);
+    event.dataTransfer.effectAllowed = "move";
+  };
+
+  return (
+    <div className="node-item" draggable onDragStart={handleDragStart}>
+      {/* 零件的外观 */}
+    </div>
+  );
+};
+```
+
+**拖拽原理（HTML5 Drag & Drop）**：
+1. **标记**：给元素加上 `draggable` 属性，浏览器才知道这玩意能拽。
+2. **装货**：在 `onDragStart` 里，我们把 `nodeId`（比如 "add_node"）存进去。
+3. **卸货**：当你在画布上松手时，画布的 `onDrop` 事件会把这个 `nodeId` 取出来，然后原地“变”出一个真实的节点。
+
+---
+
+### PropertyPanel.jsx - 属性调节器
+
+当你选中一个节点，它上方会出现这个面板。它最强大的地方在于**“自适应渲染”**。
+
+```jsx
+const PropertyPanel = ({ params, paramValues, onParamChange }) => {
+  // 1. 映射表：告诉代码，什么类型的参数用什么组件画
+  const editorMap = {
+    number: NumberInput,                                                         // 数字 -> 输入框
+    string: StringInput,                                                         // 字符串 -> 文本框
+    boolean: BooleanSwitch                                                       // 布尔 -> 开关
+  };
+
+  return (
+    <div className="property-panel">
+      {Object.entries(params).map(([key, config]) => {
+        const Editor = editorMap[config.type] || StringInput;                    // 2. 自动选组件
+        return <Editor key={key} label={config.label} value={paramValues[key]} />;
+      })}
+    </div>
+  );
+};
+```
+
+**小白通俗解读**：
+这就像是一个**“万能遥控器”**。
+- 如果你选的是“灯泡”节点，它会自动长出“亮度（数字）”和“开关（布尔）”的旋钮。
+- 如果你选的是“文字”节点，它会自动长出“内容（字符串）”的输入框。
+- 这一切都是根据 `nodeRegistry.js` 里的配置自动生成的，不需要为每个节点单独写面板代码。
+
+---
+
+### RenameModal.jsx - 重命名弹窗
+
+虽然看起来简单，但它处理了很多**“细节体验”**。
+
+```jsx
+useEffect(() => {
+  if (isOpen) {
+    // 细节1：弹窗一打开，自动把光标点进去 (focus)
+    // 细节2：自动选中已有的文字，方便你直接按退格键删掉 (select)
+    setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }, 50);
+  }
+}, [isOpen]);
+```
+
+**细节解读**：
+- **setTimeout 的必要性**：在 React 里，弹窗从“命令打开”到“真正出现在屏幕上”有一点点延迟。如果不加 `setTimeout`，代码去抓输入框时，输入框可能还没长出来。
+- **批量重命名**：如果你选中了 5 个节点点重命名，弹窗会显示“批量重命名”，确认后 5 个节点会一起变名。
 ---
 
 ### NodeBox.jsx - 节点面板
@@ -3161,24 +3732,3 @@ A: 在组件中使用 `console.log(nodes)` 或 React DevTools
 3. 查阅官方文档
 
 祝你开发顺利！
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
