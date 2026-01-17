@@ -18,6 +18,7 @@ function useWebSocket() {
   // ---------- 状态定义 ----------
   const [isConnected, setIsConnected] = useState(false);           // 连接状态
   const [isConnecting, setIsConnecting] = useState(false);         // 正在连接中
+  const [registry, setRegistry] = useState(null);                  // 节点注册表数据
   const wsRef = useRef(null);                                      // WebSocket 实例引用
   const messageIdRef = useRef(0);                                  // 消息 ID 计数器
   const pendingRequestsRef = useRef(new Map());                    // 待处理的请求
@@ -195,6 +196,9 @@ function useWebSocket() {
       console.log(`   节点列表: ${Object.keys(result.nodes || {}).join(", ")}`);
       console.log("=".repeat(50) + "\n");
 
+      // 保存注册表到状态
+      setRegistry(result);
+
       return result;
     } catch (error) {
       console.error("获取注册表失败:", error.message);
@@ -248,6 +252,7 @@ function useWebSocket() {
   return {
     isConnected,                // 是否已连接
     isConnecting,               // 是否正在连接
+    registry,                   // 节点注册表数据
     connect,                    // 连接方法
     disconnect,                 // 断开连接方法
     getRegistry,                // 获取节点注册表

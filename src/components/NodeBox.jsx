@@ -1,16 +1,16 @@
 /**
  * NodeBox.jsx - 节点面板组件
- * 
+ *
  * 画布左边的侧边栏，类似 Scratch 编辑器的积木盒
  * 用户可以从这里拖拽节点到画布上
- * 
+ *
  * 结构：
  * - 左边是分类栏（竖向色块，点击筛选）
  * - 右边是节点列表（根据选中分类显示）
  */
 
-import { useState } from "react";                                                // React hooks
-import { getNodeConfig, getAllCategories } from "../constants/nodeRegistry";     // 节点注册表工具函数
+import { useState, useMemo } from "react";                                       // React hooks
+import { getNodeConfig, getAllCategories, getNodeRegistry } from "../constants/nodeRegistry";  // 节点注册表工具函数
 import "./NodeBox.css";                                                          // 样式
 
 
@@ -66,8 +66,8 @@ const CategoryItem = ({ label, color, isSelected, onClick }) => (
  * NodeItem - 单个节点按钮
  * 拖拽这个按钮到画布上，就会创建一个新节点
  */
-const NodeItem = ({ nodeId, color }) => {
-  const config = getNodeConfig(nodeId);                                          // 获取节点配置
+const NodeItem = ({ nodeId, color, registry }) => {
+  const config = getNodeConfig(nodeId, registry);                                // 获取节点配置
 
   const handleDragStart = (event) => {
     event.dataTransfer.setData("application/reactflow", nodeId);                 // 存储节点ID
@@ -93,14 +93,14 @@ const NodeItem = ({ nodeId, color }) => {
  * NodeGroup - 一组同类型的节点
  * 每个分组有自己的标题和颜色
  */
-const NodeGroup = ({ groupData }) => {
+const NodeGroup = ({ groupData, registry }) => {
   const { label, color, nodes = [] } = groupData;                                // 解构分组数据
 
   return (
     <div className="node-group">
       <div className="group-title" style={{ color }}>{label}</div>               {/* 分组标题 */}
       {nodes.map((nodeId) => (                                                   // 遍历该分组的节点
-        <NodeItem key={nodeId} nodeId={nodeId} color={color} />
+        <NodeItem key={nodeId} nodeId={nodeId} color={color} registry={registry} />
       ))}
     </div>
   );
@@ -111,9 +111,16 @@ const NodeGroup = ({ groupData }) => {
 
 /**
  * NodeBox - 节点面板主体
+ * @param {Object} props - 组件属性
+ * @param {Object} props.registry - 从后端获取的节点注册表（可选，不传则使用默认值）
  */
-const NodeBox = () => {
-  const categories = getAllCategories();                                         // 第1步：获取所有分类
+const NodeBox = ({ registry: externalRegistry }) => {
+  // 使用外部传入的注册表，或使用默认注册表
+  const registry = useMemo(() => {
+    return externalRegistry || getNodeRegistry();
+  }, [externalRegistry]);
+  
+  const categories = useMemo(() => getAllCategories(registry), [registry]);      // 第1步：获取所有分类
   const [selectedCategory, setSelectedCategory] = useState(null);                // 第2步：初始化选中状态（null=全部）
   const filteredCategories = filterCategories(categories, selectedCategory);     // 第3步：根据选中状态筛选分类
 
@@ -129,7 +136,7 @@ const NodeBox = () => {
       {/* 节点列表区域 */}
       <div className="node-list">
         {filteredCategories.map(([groupKey, groupData]) => (
-          <NodeGroup key={groupKey} groupData={groupData} />
+          <NodeGroup key={groupKey} groupData={groupData} registry={registry} />
         ))}
       </div>
     </div>

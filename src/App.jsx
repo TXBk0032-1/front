@@ -30,6 +30,7 @@ import getLayoutedElements from "./hooks/useGetLayoutedElements";               
 import useWebSocket from "./hooks/useWebSocket";                                 // WebSocket 通信
 
 import { createNode } from "./utils/createNode";                                 // 创建节点的工具函数
+import { updateNodeRegistry } from "./constants/nodeRegistry";                   // 更新节点注册表
 import { initialNodes, initialEdges, INITIAL_NODE_ID } from "./config/initialData";  // 初始数据
 import { FLOW_CONFIG, APP_CONTAINER_STYLE, WORKSPACE_STYLE } from "./config/flowConfig";  // 画布配置
 
@@ -270,6 +271,8 @@ function App() {
     try {
       const registry = await ws.getRegistry();
       console.log("✅ 成功获取节点注册表:", registry);
+      // 更新全局注册表，这样创建节点时会使用新的配置
+      updateNodeRegistry(registry);
     } catch (error) {
       console.error("❌ 获取节点注册表失败:", error.message);
       alert("获取节点注册表失败：" + error.message);
@@ -310,7 +313,7 @@ function App() {
         isConnecting={ws.isConnecting}
       />  {/* 顶部菜单栏 */}
       <div style={WORKSPACE_STYLE}>                                              {/* 工作区：水平布局 */}
-        <NodeBox />                                                              {/* 左侧节点面板 */}
+        <NodeBox registry={ws.registry} />                                       {/* 左侧节点面板，传入后端注册表 */}
         <div style={{ flex: 1, height: "100%" }}>                                {/* 右侧画布容器 */}
           <ReactFlowProvider>                                                    {/* ReactFlow上下文 */}
             <FlowCanvas ref={flowCanvasRef} />                                   {/* 画布组件（带引用） */}
