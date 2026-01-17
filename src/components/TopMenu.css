@@ -90,6 +90,10 @@
   transform: scale(0.95);
 }
 
+.btn-layout {
+  background-color: #6BCB77;
+}
+
 .btn-import {
   background-color: #7DC7F5;
 }

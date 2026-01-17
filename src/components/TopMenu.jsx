@@ -1,6 +1,6 @@
 /**
  * TopMenu.jsx - 顶部菜单栏组件
- * 
+ *
  * 独立于画布之外的顶部导航
  * 左中右三栏布局，紫色主题
  */
@@ -13,8 +13,9 @@ import userAvatar from "../assets/user-avatar.svg";
  * @param {Object} props - 组件属性
  * @param {Function} props.onExport - 导出蓝图的回调函数
  * @param {Function} props.onImport - 导入蓝图的回调函数（接收导入的数据）
+ * @param {Function} props.onAutoLayout - 自动整理布局的回调函数
  */
-function TopMenu({ onExport, onImport }) {
+function TopMenu({ onExport, onImport, onAutoLayout }) {
   
   // ---------- 处理导出按钮点击 ----------
   const handleExport = () => {
@@ -71,6 +72,9 @@ function TopMenu({ onExport, onImport }) {
       {/* 右侧区域：操作按钮 + 用户头像 */}
       <div className="right-area">
         <div className="btn-group">
+          <button className="btn btn-layout" onClick={onAutoLayout}>
+            整理布局
+          </button>
           <button className="btn btn-import" onClick={handleImportClick}>
             导入蓝图
           </button>

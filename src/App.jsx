@@ -26,6 +26,7 @@ import usePropertyPanel from "./hooks/usePropertyPanel";                        
 import useRename from "./hooks/useRename";                                       // 重命名功能
 import useNodeActions from "./hooks/useNodeActions";                             // 节点操作（复制、删除）
 import useFlowEvents from "./hooks/useFlowEvents";                               // 画布事件处理
+import getLayoutedElements from "./hooks/useGetLayoutedElements";                // 自动布局功能
 
 import { createNode } from "./utils/createNode";                                 // 创建节点的工具函数
 import { initialNodes, initialEdges, INITIAL_NODE_ID } from "./config/initialData";  // 初始数据
@@ -57,6 +58,20 @@ const FlowCanvas = forwardRef(function FlowCanvas(props, ref) {
       if (data.nodes) setNodes(data.nodes);
       if (data.edges) setEdges(data.edges);
       if (data.nodeIdCounter) nodeIdCounter.current = data.nodeIdCounter;
+    },
+    // 自动布局功能
+    autoLayout: async () => {
+      const elkOptions = {
+        "elk.algorithm": "layered",
+        "elk.layered.spacing.nodeNodeBetweenLayers": "100",
+        "elk.spacing.nodeNode": "80",
+        "elk.direction": "RIGHT",
+      };
+      const layouted = await getLayoutedElements(nodes, edges, elkOptions);
+      if (layouted) {
+        setNodes(layouted.nodes);
+        setEdges(layouted.edges);
+      }
     },
   }), [nodes, edges, setNodes, setEdges]);
 
@@ -242,9 +257,15 @@ function App() {
     flowCanvasRef.current.setBlueprint(data);                                    // 设置蓝图数据
   };
 
+  // ---------- 自动布局功能 ----------
+  const handleAutoLayout = () => {
+    if (!flowCanvasRef.current) return;
+    flowCanvasRef.current.autoLayout();                                          // 调用自动布局
+  };
+
   return (
     <div style={APP_CONTAINER_STYLE}>                                            {/* 最外层：垂直布局 */}
-      <TopMenu onExport={handleExport} onImport={handleImport} />                {/* 顶部菜单栏 */}
+      <TopMenu onExport={handleExport} onImport={handleImport} onAutoLayout={handleAutoLayout} />  {/* 顶部菜单栏 */}
       <div style={WORKSPACE_STYLE}>                                              {/* 工作区：水平布局 */}
         <NodeBox />                                                              {/* 左侧节点面板 */}
         <div style={{ flex: 1, height: "100%" }}>                                {/* 右侧画布容器 */}

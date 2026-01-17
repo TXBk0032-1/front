@@ -2418,7 +2418,7 @@ electron-to-chromium@^1.5.263:
 
 elkjs@^0.11.0:
   version "0.11.0"
-  resolved "https://registry.npmmirror.com/elkjs/-/elkjs-0.11.0.tgz#ca57b209ff66531c0f77ff32b9667aaeaad45d1b"
+  resolved "https://registry.yarnpkg.com/elkjs/-/elkjs-0.11.0.tgz#ca57b209ff66531c0f77ff32b9667aaeaad45d1b"
   integrity sha512-u4J8h9mwEDaYMqo0RYJpqNMFDoMK7f+pu4GjcV+N8jIC7TRdORgzkfSjTJemhqONFfH6fBI3wpysgWbhgVWIXw==
 
 enhanced-resolve@^5.18.3:
