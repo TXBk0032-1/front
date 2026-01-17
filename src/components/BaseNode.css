@@ -1,12 +1,13 @@
 .container {
   background: rgb(137, 146, 235);
   color: white;
-  padding: 16px 10px;
+  padding: 8px 12px;
   border-radius: 10px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  height: fit-content;
 }
 
 .port-container {

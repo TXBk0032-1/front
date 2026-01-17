@@ -12,12 +12,14 @@
   /* 布局：横向排列（分类栏 + 节点列表） */
   display: flex;
   flex-direction: row;
-  
+
   /* 尺寸 */
   height: 100%;
-  
+
   /* 其他 */
   user-select: none;
+
+
 }
 
 /* ========== 分类栏（左侧竖向色块） ========== */
@@ -41,7 +43,7 @@
   border-radius: 8px;
   position: relative;
   transition: all 0.1s ease-in-out;
-  
+
   /* 文字样式 */
   font-size: 12px;
   font-weight: 500;
@@ -71,24 +73,26 @@
   /* 布局 */
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  
+
+
   /* 尺寸 */
   width: 160px;
   min-width: 160px;
-  
+
   /* 内边距 */
   padding: 16px;
-  
+
   /* 外观 */
   background-color: rgb(234, 239, 252);
-  
+
   /* 滚动 */
   overflow-y: auto;
   overflow-x: hidden;
-  
+
   /* 占据剩余高度 */
   height: 100%;
+
+  direction: rtl;
 }
 
 /* ========== 节点分组 ========== */
@@ -98,22 +102,22 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
+
+  direction: ltr;
 }
 
 
 
-
-
-/* 迁移如下 */
-.nodes-box {
-  width: 30%;
-  min-width: 180px;
+.node-list {
+  width: fit-content;
+  /* min-width: 180px; */
   max-width: 200px;
   background-color: #eaeffc;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 10px;
   height: 100%;
+  gap: 20px;
 
   direction: rtl;
 }
@@ -134,19 +138,20 @@
 }
 
 /* 滚动条 */
-.nodes-box::-webkit-scrollbar {
+.node-list::-webkit-scrollbar {
   width: 6px;
 }
 
-.nodes-box::-webkit-scrollbar-track {
+.node-list::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0);
 }
 
-.nodes-box::-webkit-scrollbar-thumb {
+.node-list::-webkit-scrollbar-thumb {
   background: #aaa;
+  border-radius: 10px;
 }
 
-.nodes-box::-webkit-scrollbar-thumb:hover {
+.node-list::-webkit-scrollbar-thumb:hover {
   background: #8992EB;
 }
 
