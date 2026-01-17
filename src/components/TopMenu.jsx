@@ -14,8 +14,12 @@ import userAvatar from "../assets/user-avatar.svg";
  * @param {Function} props.onExport - 导出蓝图的回调函数
  * @param {Function} props.onImport - 导入蓝图的回调函数（接收导入的数据）
  * @param {Function} props.onAutoLayout - 自动整理布局的回调函数
+ * @param {Function} props.onGetRegistry - 获取节点注册表的回调函数
+ * @param {Function} props.onRunBlueprint - 运行蓝图的回调函数
+ * @param {boolean} props.isConnected - WebSocket 连接状态
+ * @param {boolean} props.isConnecting - WebSocket 正在连接状态
  */
-function TopMenu({ onExport, onImport, onAutoLayout }) {
+function TopMenu({ onExport, onImport, onAutoLayout, onGetRegistry, onRunBlueprint, isConnected, isConnecting }) {
   
   // ---------- 处理导出按钮点击 ----------
   const handleExport = () => {
@@ -71,6 +75,30 @@ function TopMenu({ onExport, onImport, onAutoLayout }) {
 
       {/* 右侧区域：操作按钮 + 用户头像 */}
       <div className="right-area">
+        {/* 后端通信按钮组 */}
+        <div className="btn-group">
+          <button
+            className={`btn btn-registry ${isConnected ? 'connected' : ''}`}
+            onClick={onGetRegistry}
+            disabled={isConnecting}
+            title={isConnected ? '已连接后端' : '点击连接后端并获取注册表'}
+          >
+            {isConnecting ? '连接中...' : '获取注册表'}
+          </button>
+          <button
+            className="btn btn-run"
+            onClick={onRunBlueprint}
+            disabled={isConnecting}
+            title="运行当前蓝图"
+          >
+            运行蓝图
+          </button>
+        </div>
+
+        {/* 分隔线 */}
+        <div className="btn-divider"></div>
+
+        {/* 蓝图操作按钮组 */}
         <div className="btn-group">
           <button className="btn btn-layout" onClick={onAutoLayout}>
             整理布局

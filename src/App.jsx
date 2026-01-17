@@ -27,6 +27,7 @@ import useRename from "./hooks/useRename";                                      
 import useNodeActions from "./hooks/useNodeActions";                             // 节点操作（复制、删除）
 import useFlowEvents from "./hooks/useFlowEvents";                               // 画布事件处理
 import getLayoutedElements from "./hooks/useGetLayoutedElements";                // 自动布局功能
+import useWebSocket from "./hooks/useWebSocket";                                 // WebSocket 通信
 
 import { createNode } from "./utils/createNode";                                 // 创建节点的工具函数
 import { initialNodes, initialEdges, INITIAL_NODE_ID } from "./config/initialData";  // 初始数据
@@ -230,6 +231,7 @@ function renderRenameModal(rename) {
 
 function App() {
   const flowCanvasRef = useRef(null);                                            // 画布组件的引用
+  const ws = useWebSocket();                                                     // WebSocket 通信
 
   // ---------- 导出蓝图功能 ----------
   const handleExport = () => {
@@ -263,9 +265,50 @@ function App() {
     flowCanvasRef.current.autoLayout();                                          // 调用自动布局
   };
 
+  // ---------- 获取节点注册表功能 ----------
+  const handleGetRegistry = async () => {
+    try {
+      const registry = await ws.getRegistry();
+      console.log("✅ 成功获取节点注册表:", registry);
+    } catch (error) {
+      console.error("❌ 获取节点注册表失败:", error.message);
+      alert("获取节点注册表失败：" + error.message);
+    }
+  };
+
+  // ---------- 运行蓝图功能 ----------
+  const handleRunBlueprint = async () => {
+    if (!flowCanvasRef.current) {
+      alert("画布未准备好");
+      return;
+    }
+
+    const blueprint = flowCanvasRef.current.getBlueprint();
+    if (!blueprint.nodes || blueprint.nodes.length === 0) {
+      alert("蓝图中没有节点");
+      return;
+    }
+
+    try {
+      const result = await ws.runBlueprint(blueprint, {});
+      console.log("✅ 蓝图运行结果:", result);
+    } catch (error) {
+      console.error("❌ 运行蓝图失败:", error.message);
+      alert("运行蓝图失败：" + error.message);
+    }
+  };
+
   return (
     <div style={APP_CONTAINER_STYLE}>                                            {/* 最外层：垂直布局 */}
-      <TopMenu onExport={handleExport} onImport={handleImport} onAutoLayout={handleAutoLayout} />  {/* 顶部菜单栏 */}
+      <TopMenu
+        onExport={handleExport}
+        onImport={handleImport}
+        onAutoLayout={handleAutoLayout}
+        onGetRegistry={handleGetRegistry}
+        onRunBlueprint={handleRunBlueprint}
+        isConnected={ws.isConnected}
+        isConnecting={ws.isConnecting}
+      />  {/* 顶部菜单栏 */}
       <div style={WORKSPACE_STYLE}>                                              {/* 工作区：水平布局 */}
         <NodeBox />                                                              {/* 左侧节点面板 */}
         <div style={{ flex: 1, height: "100%" }}>                                {/* 右侧画布容器 */}
