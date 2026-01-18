@@ -1,0 +1,131 @@
+/**
+ * SideBar.css - 侧边栏样式（节点面板）
+ */
+
+.node-box {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  user-select: none;
+}
+
+/* ========== 分类栏（左侧竖向色块） ========== */
+
+.category-bar {
+  width: fit-content;
+  background-color: #f6f9fe;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  margin: 4px;
+  border-radius: 8px;
+  position: relative;
+  transition: all 0.1s ease-in-out;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.category-item:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  scale: 1.1;
+}
+
+.category-item:active {
+  scale: 0.9;
+}
+
+.category-item.active {
+  background-color: var(--category-color);
+  color: white;
+}
+
+.category-item.active:hover {
+  scale: 1;
+}
+
+/* ========== 节点列表区域（右侧） ========== */
+
+.node-list {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  max-width: 200px;
+  padding: 10px;
+  background-color: #eaeffc;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+  gap: 20px;
+  direction: rtl;
+}
+
+/* ========== 节点分组 ========== */
+
+.node-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  direction: ltr;
+}
+
+.group-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 滚动条 */
+.node-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.node-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0);
+}
+
+.node-list::-webkit-scrollbar-thumb {
+  background: #aaa;
+  border-radius: 10px;
+}
+
+.node-list::-webkit-scrollbar-thumb:hover {
+  background: #8992EB;
+}
+
+/* ========== 节点项 ========== */
+
+.node-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: fit-content;
+  flex-wrap: nowrap;
+  border-radius: 12px;
+  background-color: #8992eb;
+  padding: 8px 24px;
+  gap: 40px;
+  cursor: grab;
+  outline: #ffffff;
+  transition: opacity 0.2s, filter 0.2s, outline 0.2s, scale 0.2s;
+  font-size: 18px;
+  color: #fff;
+  word-break: keep-all;
+  white-space: nowrap;
+}
+
+.node-item:active {
+  cursor: grabbing;
+}
+
+.node-item:hover {
+  filter: brightness(1.1);
+}

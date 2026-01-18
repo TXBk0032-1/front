@@ -1,0 +1,67 @@
+/**
+ * NodeMenu.css - 节点右键菜单样式
+ */
+
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: row;
+  padding: 12px;
+  gap: 12px;
+  background: #F6F9FE;
+  box-shadow: 0px 2px 20px rgba(111, 125, 176, 0.1);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  color: rgb(111, 125, 176);
+}
+
+/* ========== 菜单项 ========== */
+
+.context-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 5px;
+  cursor: pointer;
+}
+
+/* ========== 图标容器 ========== */
+
+.icon-container {
+  border-radius: 10px;
+  background: #EAEFFC;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease-in-out;
+}
+
+.icon-container:hover {
+  filter: brightness(1.05);
+}
+
+.icon-container:active {
+  filter: brightness(0.98);
+}
+
+/* ========== 菜单图标 ========== */
+
+.menu-icon {
+  width: 50px;
+  height: 34px;
+  margin: 5px;
+  scale: 1.2;
+}
+
+/* ========== 菜单文字 ========== */
+
+.menu-label {
+  font-size: 12px;
+  color: rgb(111, 125, 176);
+  font-weight: bold;
+}

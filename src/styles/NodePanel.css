@@ -1,0 +1,129 @@
+/**
+ * NodePanel.css - 节点属性面板样式
+ */
+
+/* ========== 属性面板容器 ========== */
+
+.property-panel {
+  position: fixed;
+  z-index: 999;
+  border-radius: 14px;
+  background: #F6F9FE;
+  box-shadow: 0px 2px 20px rgba(111, 125, 176, 0.15);
+  min-width: 200px;
+  max-width: 280px;
+  overflow: hidden;
+}
+
+/* ========== 面板头部 ========== */
+
+.panel-header {
+  background: #EAEFFC;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(111, 125, 176, 0.1);
+}
+
+.panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(111, 125, 176);
+  letter-spacing: 0.5px;
+}
+
+/* ========== 面板内容区 ========== */
+
+.panel-content {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ========== 参数项 ========== */
+
+.param-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* ========== 参数标签 ========== */
+
+.param-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgb(111, 125, 176);
+}
+
+/* ========== 参数输入框 ========== */
+
+.param-input {
+  font-size: 12px;
+}
+
+/* ========== 滚动条样式 ========== */
+
+.panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+  background: rgba(111, 125, 176, 0.3);
+  border-radius: 3px;
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(111, 125, 176, 0.5);
+}
+
+/* ========== 重命名弹窗 ========== */
+
+.rename-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.rename-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 320px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.rename-modal-header {
+  margin-bottom: 16px;
+}
+
+.rename-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.rename-modal-body {
+  margin-bottom: 20px;
+}
+
+.rename-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

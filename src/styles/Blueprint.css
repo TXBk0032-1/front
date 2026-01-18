@@ -1,0 +1,58 @@
+/**
+ * Blueprint.css - 蓝图画布样式
+ */
+
+.blueprint-container {
+  flex: 1;
+  height: 100%;
+  position: relative;
+}
+
+/* ========== 画布背景 ========== */
+
+.react-flow__background {
+  background-color: #e2e9fa;
+}
+
+/* ========== 连接线样式 ========== */
+
+.react-flow__edge-path {
+  stroke: #fff;
+  stroke-width: 3;
+}
+
+.react-flow__connection-line {
+  stroke: #fff;
+  stroke-width: 3;
+}
+
+/* ========== 小地图 ========== */
+
+.react-flow__minimap {
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ========== 控制栏 ========== */
+
+.react-flow__controls {
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.react-flow__controls-button {
+  background-color: #fff;
+  border: none;
+}
+
+.react-flow__controls-button:hover {
+  background-color: #f0f0f0;
+}
+
+/* ========== 选择框 ========== */
+
+.react-flow__selection {
+  background-color: rgba(137, 146, 235, 0.1);
+  border: 1px dashed #8992eb;
+}

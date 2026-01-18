@@ -1,0 +1,57 @@
+/**
+ * Node.css - 节点样式
+ */
+
+.container {
+  background: rgb(137, 146, 235);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  height: fit-content;
+}
+
+.port-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.port-item {
+  position: relative;
+}
+
+.handle {
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ffffffff;
+}
+
+.label {
+  font-size: 12px;
+}
+
+.input-label {
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+.output-label {
+  font-size: 12px;
+  margin-right: 10px;
+}
+
+.title-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 10px;
+}
+
+.title {
+  font-weight: bold;
+  text-align: center;
+}

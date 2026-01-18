@@ -1,0 +1,93 @@
+/**
+ * ToolBar.css - 工具栏样式
+ */
+
+.toolbar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #F6F9FE;
+  border-radius: 12px;
+  box-shadow: 0px 2px 20px rgba(111, 125, 176, 0.15);
+  z-index: 100;
+}
+
+/* ========== 工具栏按钮 ========== */
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: #EAEFFC;
+  cursor: pointer;
+  transition: all 0.1s ease-in-out;
+}
+
+.toolbar-btn:hover {
+  background: #dde4f7;
+  transform: scale(1.05);
+}
+
+.toolbar-btn:active {
+  transform: scale(0.95);
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar-btn:disabled:hover {
+  transform: none;
+  background: #EAEFFC;
+}
+
+.toolbar-btn img {
+  width: 20px;
+  height: 20px;
+}
+
+/* ========== 分隔线 ========== */
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(111, 125, 176, 0.2);
+  margin: 0 4px;
+}
+
+/* ========== 缩放显示 ========== */
+
+.zoom-display {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgb(111, 125, 176);
+  min-width: 50px;
+  text-align: center;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+
+.zoom-display:hover {
+  background: #EAEFFC;
+}
+
+/* ========== 工具栏组 ========== */
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
