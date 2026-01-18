@@ -9,11 +9,11 @@
 import { useMemo, useEffect, useState, useRef } from 'react';
 import { useReactFlow, useViewport } from '@xyflow/react';
 import { Input, Switch, Button, TextField, Label } from '@heroui/react';
-import useStore from '../store';
-import { calcPositionBelowNode } from '../utils/canvas/position';
-import { clampScale } from '../utils/canvas/zoom';
-import { getNodeConfig } from '../constants/nodeRegistry';
-import '../styles/NodePanel.css';
+import useStore from '@/store';
+import { calcPositionBelowNode } from '@/utils/canvas/position';
+import { clampScale } from '@/utils/canvas/zoom';
+import { getNodeConfig } from '@/constants/nodeRegistry';
+import '@/styles/NodePanel.css';
 
 // ========== 参数编辑器组件 ==========
 

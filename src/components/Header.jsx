@@ -8,14 +8,14 @@
  */
 
 import { useState } from 'react';
-import useStore from '../store';
-import wsManager from '../ws';
-import { exportBlueprintToFile } from '../utils/data/export';
-import { importBlueprintFromFile } from '../utils/data/import';
-import { getLayoutedElements, DEFAULT_ELK_OPTIONS } from '../utils/canvas/layout';
-import { updateNodeRegistry } from '../constants/nodeRegistry';
-import userAvatar from '../assets/user-avatar.svg';
-import '../styles/Header.css';
+import useStore from '@/store';
+import wsManager from '@/ws';
+import { exportBlueprintToFile } from '@/utils/data/export';
+import { importBlueprintFromFile } from '@/utils/data/import';
+import { getLayoutedElements, DEFAULT_ELK_OPTIONS } from '@/utils/canvas/layout';
+import { updateNodeRegistry } from '@/constants/nodeRegistry';
+import userAvatar from '@/assets/user-avatar.svg';
+import '@/styles/Header.css';
 
 function Header() {
   const [blueprintName, setBlueprintName] = useState('');

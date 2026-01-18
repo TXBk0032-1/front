@@ -22,16 +22,16 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import useStore from '../store';
+import useStore from '@/store';
 import Node from './Node';
 import ToolBar from './ToolBar';
 import NodeMenu from './NodeMenu';
 import { PropertyPanel, RenameModal } from './NodePanel';
-import { createNode } from '../utils/createNode';
-import { checkShouldSaveHistory, checkEdgesShouldSaveHistory } from '../utils/core/history';
-import { getTargetNodeIds, checkIsSingleSelect } from '../utils/core/actions';
+import { createNode } from '@/utils/createNode';
+import { checkShouldSaveHistory, checkEdgesShouldSaveHistory } from '@/utils/core/history';
+import { getTargetNodeIds, checkIsSingleSelect } from '@/utils/core/actions';
 
-import '../styles/Blueprint.css';
+import '@/styles/Blueprint.css';
 
 // React Flow 配置
 const FLOW_CONFIG = {

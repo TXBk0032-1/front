@@ -9,16 +9,16 @@
 
 import { useMemo, useEffect } from 'react';
 import { useReactFlow, useViewport } from '@xyflow/react';
-import useStore from '../store';
-import { calcPositionAboveNode } from '../utils/canvas/position';
-import { clampScale } from '../utils/canvas/zoom';
-import { createNode } from '../utils/createNode';
+import useStore from '@/store';
+import { calcPositionAboveNode } from '@/utils/canvas/position';
+import { clampScale } from '@/utils/canvas/zoom';
+import { createNode } from '@/utils/createNode';
 
-import copyPasteIcon from '../assets/ContextMenu/copy-paste.svg';
-import deleteIcon from '../assets/ContextMenu/delete-node.svg';
-import renameIcon from '../assets/ContextMenu/rename.svg';
+import copyPasteIcon from '@/assets/ContextMenu/copy-paste.svg';
+import deleteIcon from '@/assets/ContextMenu/delete-node.svg';
+import renameIcon from '@/assets/ContextMenu/rename.svg';
 
-import '../styles/NodeMenu.css';
+import '@/styles/NodeMenu.css';
 
 // ========== 菜单项组件 ==========
 

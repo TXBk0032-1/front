@@ -9,8 +9,8 @@
 
 import { Handle, Position, useEdges, useReactFlow } from '@xyflow/react';
 import { Button } from '@heroui/react';
-import useStore from '../store';
-import '../styles/Node.css';
+import useStore from '@/store';
+import '@/styles/Node.css';
 
 const DRAG_THRESHOLD = 5;
 

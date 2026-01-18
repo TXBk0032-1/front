@@ -7,9 +7,9 @@
  */
 
 import { useState, useMemo } from 'react';
-import useStore from '../store';
-import { getNodeConfig, getAllCategories, getNodeRegistry } from '../constants/nodeRegistry';
-import '../styles/SideBar.css';
+import useStore from '@/store';
+import { getNodeConfig, getAllCategories, getNodeRegistry } from '@/constants/nodeRegistry';
+import '@/styles/SideBar.css';
 
 // ========== 分类项组件 ==========
 

@@ -9,7 +9,7 @@
  * 3. 初始化画布时创建默认节点
  */
 
-import { getNodeConfig, getNodeColor } from "../constants/nodeRegistry";         // 节点注册表工具函数
+import { getNodeConfig, getNodeColor } from "@/constants/nodeRegistry";         // 节点注册表工具函数
 
 
 /**

@@ -8,16 +8,16 @@
  */
 
 import { useReactFlow, useViewport } from '@xyflow/react';
-import useStore from '../store';
-import { getLayoutedElements, DEFAULT_ELK_OPTIONS } from '../utils/canvas/layout';
+import useStore from '@/store';
+import { getLayoutedElements, DEFAULT_ELK_OPTIONS } from '@/utils/canvas/layout';
 
-import undoIcon from '../assets/ToolBar/undo.svg';
-import redoIcon from '../assets/ToolBar/redo.svg';
-import zoomInIcon from '../assets/ToolBar/zoom-in.svg';
-import zoomOutIcon from '../assets/ToolBar/zoom-out.svg';
-import arrangeIcon from '../assets/ToolBar/arrange.svg';
+import undoIcon from '@/assets/ToolBar/undo.svg';
+import redoIcon from '@/assets/ToolBar/redo.svg';
+import zoomInIcon from '@/assets/ToolBar/zoom-in.svg';
+import zoomOutIcon from '@/assets/ToolBar/zoom-out.svg';
+import arrangeIcon from '@/assets/ToolBar/arrange.svg';
 
-import '../styles/ToolBar.css';
+import '@/styles/ToolBar.css';
 
 function ToolBar() {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
