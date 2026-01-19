@@ -110,7 +110,7 @@ function Sidebar() {
   }, [categories, selectedCategory]);
 
   return (
-    <div className="node-box">
+    <div className="side-bar">
       {/* 分类筛选栏 */}
       <CategoryBar
         categories={categories}

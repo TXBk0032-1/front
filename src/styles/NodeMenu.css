@@ -17,12 +17,15 @@
   letter-spacing: 0.5px;
   white-space: nowrap;
   color: rgb(111, 125, 176);
-  
+
   /* 动态位置样式 */
   left: var(--menu-x);
   top: var(--menu-y);
   transform: var(--menu-transform);
   transform-origin: var(--menu-origin);
+
+  /* top: 0;
+  left: 0; */
 }
 
 /* ========== 菜单项 ========== */
@@ -48,11 +51,11 @@
 }
 
 .icon-container:hover {
-  filter: brightness(1.05);
+  filter: brightness(0.98);
 }
 
 .icon-container:active {
-  filter: brightness(0.98);
+  filter: brightness(1.2);
 }
 
 /* ========== 菜单图标 ========== */

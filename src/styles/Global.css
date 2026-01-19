@@ -1,9 +1,3 @@
-/**
- * Global.css - 全局样式
- * 
- * 包含应用级别的样式设置
- */
-
 @import "tailwindcss";
 @import "@heroui/styles";
 
@@ -17,7 +11,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  
+
   /* 主题颜色 */
   --color-primary: #5f38df;
   --color-primary-light: #7f60e5;
@@ -27,59 +21,30 @@
   --color-text-secondary: rgb(111, 125, 176);
 }
 
-body {
+html,
+body,
+#root,
+#editor {
   margin: 0;
+  padding: 0;
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  height: 100%;
+  width: 100%;
   color: var(--color-text);
-  background-color: #ffffff;
+  background-color: var(--color-background);
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  user-select: none;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #747bff;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-/* ========== React Flow 选中节点样式 ========== */
-
-/**
- * 隐藏默认的框选矩形
- * 问题：react-flow__nodesselection-rect 的图层高于节点
- * 导致右键无法穿透点击到节点，无法弹出右键菜单
- */
-.react-flow__nodesselection-rect {
-  display: none !important;
-}
-
-/**
- * 选中节点的样式
- * 使用发光效果和边框来标识选中状态
- */
-.react-flow__node.selected .container {
-  box-shadow:
-    0 0 0 3px rgba(255, 255, 255, 0.9),
-    0 0 15px 5px rgba(137, 146, 235, 0.6);
-  transform: scale(1.02);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-/**
- * 未选中节点的默认过渡
- */
-.react-flow__node .container {
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+#workspace {
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  height: 100%;
 }
 
 /* ========== 滚动条样式 ========== */
@@ -102,65 +67,19 @@ h1 {
   background: rgba(111, 125, 176, 0.5);
 }
 
-/* ========== 动画 ========== */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+/* ========== 通用样式 ========== */
+a {
+  font-weight: 600;
+  color: #646cff;
+  text-decoration: inherit;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+a:hover {
+  color: #747bff;
 }
 
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
 }
 
-/* ========== Edge 连线样式 ========== */
-
-.custom-edge-path {
-  stroke-width: 3;
-  stroke: #fff;
-}
-
-.edge-label {
-  position: absolute;
-  font-size: 12px;
-  pointer-events: all;
-}
-
-/* ========== App 布局样式 ========== */
-
-.app-container {
-  display: flex;
-  flex-direction: column;
-  width: 100vw;
-  height: 100vh;
-  background: #e2e9faff;
-}
-
-.workspace {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  overflow: hidden;
-}

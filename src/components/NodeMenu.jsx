@@ -7,12 +7,6 @@
  * - 重命名
  */
 
-import { useMemo, useEffect } from 'react';
-import { useReactFlow, useViewport } from '@xyflow/react';
-import useStore from '@/store';
-import { calcPositionAboveNode } from '@/utils/canvas/position';
-import { clampScale } from '@/utils/canvas/zoom';
-import { createNode } from '@/utils/createNode';
 
 import copyPasteIcon from '@/assets/ContextMenu/copy-paste.svg';
 import deleteIcon from '@/assets/ContextMenu/delete-node.svg';
@@ -34,91 +28,12 @@ const MenuItem = ({ icon, label, onClick }) => (
 // ========== 主组件 ==========
 
 function NodeMenu() {
-  const { getNode, flowToScreenPosition } = useReactFlow();
-  const viewport = useViewport();
-  
-  const {
-    contextMenu,
-    closeContextMenu,
-    duplicateNodes,
-    deleteNodes,
-    openRenameModal,
-    closePropertyPanel
-  } = useStore();
-
-  // 计算菜单位置
-  const menuPosition = useMemo(() => {
-    if (!contextMenu) return null;
-    const nodeData = getNode(contextMenu.targetNodeId);
-    if (!nodeData) return null;
-    return calcPositionAboveNode(nodeData, flowToScreenPosition, viewport.zoom);
-  }, [contextMenu, getNode, flowToScreenPosition, viewport]);
-
-  // 点击外部关闭
-  useEffect(() => {
-    if (!contextMenu) return;
-
-    const handleClickOutside = (event) => {
-      const menuElement = document.querySelector('.context-menu');
-      const isClickInside = menuElement && menuElement.contains(event.target);
-      if (!isClickInside) closeContextMenu();
-    };
-
-    document.addEventListener('mousedown', handleClickOutside, true);
-    document.addEventListener('click', handleClickOutside, true);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside, true);
-      document.removeEventListener('click', handleClickOutside, true);
-    };
-  }, [contextMenu, closeContextMenu]);
-
-  // 不显示
-  if (!contextMenu || !menuPosition) return null;
-
-  const clampedScale = clampScale(menuPosition.scale);
-
-  // 计算位置样式
-  const positionStyle = menuPosition.position === 'above'
-    ? {
-        '--menu-x': `${menuPosition.x}px`,
-        '--menu-y': `${menuPosition.y}px`,
-        '--menu-transform': `translate(-50%, -100%) scale(${clampedScale})`,
-        '--menu-origin': 'center bottom'
-      }
-    : {
-        '--menu-x': `${menuPosition.x}px`,
-        '--menu-y': `${menuPosition.y}px`,
-        '--menu-transform': `translateX(-50%) scale(${clampedScale})`,
-        '--menu-origin': 'center top'
-      };
-
-  // 复制粘贴
-  const handleCopyPaste = () => {
-    duplicateNodes(contextMenu.nodeIds, createNode);
-    closeContextMenu();
-    closePropertyPanel();
-  };
-
-  // 删除
-  const handleDelete = () => {
-    deleteNodes(contextMenu.nodeIds);
-    closeContextMenu();
-    closePropertyPanel();
-  };
-
-  // 重命名
-  const handleRename = () => {
-    openRenameModal(contextMenu.nodeIds);
-    closeContextMenu();
-    closePropertyPanel();
-  };
 
   return (
-    <div className="context-menu" style={positionStyle}>
-      <MenuItem icon={copyPasteIcon} label="复制粘贴" onClick={handleCopyPaste} />
-      <MenuItem icon={deleteIcon} label="删除节点" onClick={handleDelete} />
-      <MenuItem icon={renameIcon} label="重命名" onClick={handleRename} />
+    <div className="context-menu">
+      <MenuItem icon={copyPasteIcon} label="复制粘贴" />
+      <MenuItem icon={deleteIcon} label="删除节点" />
+      <MenuItem icon={renameIcon} label="重命名" />
     </div>
   );
 }

@@ -6,10 +6,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 20px;
-  height: fit-content;
+  padding: 8px 12px;
+  height: 60px;
   background-color: #5f38df;
   color: #fff;
+  gap: 12px;
 }
 
 /* ========== 左侧区域 ========== */
@@ -17,32 +18,29 @@
 .left-area {
   display: flex;
   align-items: center;
-  gap: 30px;
 }
 
 .logo {
   font-size: 20px;
   font-weight: bold;
   color: #ffffff;
-  margin: 0;
+  white-space: nowrap;
 }
 
 /* ========== 中间区域 ========== */
 
-.middle-area {
-  max-width: 200px;
-  margin: 0 10px;
-}
+
 
 .blueprint-name-input {
   width: 100%;
-  padding: 8px 16px;
+  min-width: 100px;
+  padding: 8px 12px;
   border: 0px;
   border-radius: 999px;
   font-size: 14px;
   font-weight: 500;
   text-align: center;
-  background-color: #7f60e5;
+  background-color: rgba(255, 255, 255, 0.2);
   color: #fff;
   outline: none;
 }
@@ -57,11 +55,6 @@
 .right-area {
   display: flex;
   align-items: center;
-  gap: 30px;
-}
-
-.btn-group {
-  display: flex;
   gap: 12px;
 }
 
@@ -71,24 +64,20 @@
   font-size: 14px;
   font-weight: 500;
   color: #fff;
-  letter-spacing: -0.5px;
-  padding: 8px 18px;
+  padding: 8px 12px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.1s ease-in-out;
+  transition: 0.1s ease-in-out;
+  white-space: nowrap;
 }
 
 .btn:hover {
-  transform: scale(1.05);
+  filter: brightness(1.1);
 }
 
 .btn:active {
-  transform: scale(0.95);
-}
-
-.btn-layout {
-  background-color: #6BCB77;
+  transform: scale(0.98);
 }
 
 .btn-import {
@@ -97,56 +86,4 @@
 
 .btn-export {
   background-color: #E1B86B;
-}
-
-.btn-registry {
-  background-color: #9B59B6;
-}
-
-.btn-registry.connected {
-  background-color: #27AE60;
-}
-
-.btn-run {
-  background-color: #E74C3C;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn:disabled:hover {
-  transform: none;
-}
-
-/* ========== 按钮分隔线 ========== */
-
-.btn-divider {
-  width: 1px;
-  height: 24px;
-  background-color: rgba(255, 255, 255, 0.3);
-  margin: 0 8px;
-}
-
-/* ========== 用户头像 ========== */
-
-.user-avatar img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  cursor: pointer;
-  transition: all 0.1s ease-in-out;
-}
-
-.user-avatar img:hover {
-  transform: scale(1.1);
-}
-
-/* ========== 隐藏的文件输入框 ========== */
-
-.hidden-input {
-  display: none;
 }
