@@ -32,6 +32,7 @@
   transition: all 0.1s ease-in-out;
   font-size: 12px;
   font-weight: 500;
+  color: var(--category-text-color);
 }
 
 .category-item:hover {
@@ -81,6 +82,7 @@
 .group-title {
   font-size: 16px;
   font-weight: 600;
+  color: var(--group-color);
 }
 
 /* 滚动条 */
@@ -110,7 +112,7 @@
   width: fit-content;
   flex-wrap: nowrap;
   border-radius: 12px;
-  background-color: #8992eb;
+  background-color: var(--node-color, #8992eb);
   padding: 8px 24px;
   gap: 40px;
   cursor: grab;

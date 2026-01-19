@@ -81,16 +81,16 @@ function NodeMenu() {
   // 计算位置样式
   const positionStyle = menuPosition.position === 'above'
     ? {
-        left: menuPosition.x,
-        top: menuPosition.y,
-        transform: `translate(-50%, -100%) scale(${clampedScale})`,
-        transformOrigin: 'center bottom'
+        '--menu-x': `${menuPosition.x}px`,
+        '--menu-y': `${menuPosition.y}px`,
+        '--menu-transform': `translate(-50%, -100%) scale(${clampedScale})`,
+        '--menu-origin': 'center bottom'
       }
     : {
-        left: menuPosition.x,
-        top: menuPosition.y,
-        transform: `translateX(-50%) scale(${clampedScale})`,
-        transformOrigin: 'center top'
+        '--menu-x': `${menuPosition.x}px`,
+        '--menu-y': `${menuPosition.y}px`,
+        '--menu-transform': `translateX(-50%) scale(${clampedScale})`,
+        '--menu-origin': 'center top'
       };
 
   // 复制粘贴

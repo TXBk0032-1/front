@@ -17,6 +17,12 @@
   letter-spacing: 0.5px;
   white-space: nowrap;
   color: rgb(111, 125, 176);
+  
+  /* 动态位置样式 */
+  left: var(--menu-x);
+  top: var(--menu-y);
+  transform: var(--menu-transform);
+  transform-origin: var(--menu-origin);
 }
 
 /* ========== 菜单项 ========== */

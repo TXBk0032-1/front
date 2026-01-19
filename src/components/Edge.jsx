@@ -41,12 +41,8 @@ const CustomEdge = ({
     <>
       <path
         id={id}
-        style={{
-          strokeWidth: 3,
-          stroke: '#fff',
-          ...style
-        }}
-        className="react-flow__edge-path"
+        style={style}
+        className="react-flow__edge-path custom-edge-path"
         d={edgePath}
         markerEnd={markerEnd}
       />
@@ -56,12 +52,9 @@ const CustomEdge = ({
         <EdgeLabelRenderer>
           <div
             style={{
-              position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              fontSize: 12,
-              pointerEvents: 'all'
             }}
-            className="nodrag nopan"
+            className="nodrag nopan edge-label"
           >
             {data.label}
           </div>
@@ -99,12 +92,8 @@ export const AnimatedEdge = ({
     <>
       <path
         id={id}
-        style={{
-          strokeWidth: 3,
-          stroke: '#fff',
-          ...style
-        }}
-        className="react-flow__edge-path animated"
+        style={style}
+        className="react-flow__edge-path animated custom-edge-path"
         d={edgePath}
         markerEnd={markerEnd}
       />

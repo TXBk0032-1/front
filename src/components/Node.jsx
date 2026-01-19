@@ -73,7 +73,7 @@ const Node = ({ data, id }) => {
   return (
     <Button
       className="container"
-      style={{ background: color }}
+      style={{ '--node-color': color }}
       onDoubleClick={handleDoubleClick}
     >
       {/* 左侧：输入端口区域 */}

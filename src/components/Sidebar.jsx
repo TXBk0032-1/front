@@ -18,7 +18,7 @@ const CategoryItem = ({ label, color, isSelected, onClick }) => (
     className={`category-item ${isSelected ? 'active' : ''}`}
     style={{
       '--category-color': color,
-      color: isSelected ? '#fff' : color
+      '--category-text-color': isSelected ? '#fff' : color
     }}
     onClick={onClick}
   >
@@ -66,7 +66,7 @@ const NodeItem = ({ nodeId, color, registry }) => {
   return (
     <div
       className="node-item"
-      style={{ background: color }}
+      style={{ '--node-color': color }}
       draggable
       onDragStart={handleDragStart}
     >
@@ -82,7 +82,7 @@ const NodeGroup = ({ groupData, registry }) => {
 
   return (
     <div className="node-group">
-      <div className="group-title" style={{ color }}>{label}</div>
+      <div className="group-title" style={{ '--group-color': color }}>{label}</div>
       {nodes.map((nodeId) => (
         <NodeItem key={nodeId} nodeId={nodeId} color={color} registry={registry} />
       ))}

@@ -124,16 +124,16 @@ export function PropertyPanel() {
   // 计算位置样式
   const positionStyle = panelPosition.position === 'above'
     ? {
-        left: panelPosition.x,
-        top: panelPosition.y,
-        transform: `translate(-50%, -100%) scale(${clampedScale})`,
-        transformOrigin: 'center bottom'
+        '--panel-x': `${panelPosition.x}px`,
+        '--panel-y': `${panelPosition.y}px`,
+        '--panel-transform': `translate(-50%, -100%) scale(${clampedScale})`,
+        '--panel-origin': 'center bottom'
       }
     : {
-        left: panelPosition.x,
-        top: panelPosition.y,
-        transform: `translateX(-50%) scale(${clampedScale})`,
-        transformOrigin: 'center top'
+        '--panel-x': `${panelPosition.x}px`,
+        '--panel-y': `${panelPosition.y}px`,
+        '--panel-transform': `translateX(-50%) scale(${clampedScale})`,
+        '--panel-origin': 'center top'
       };
 
   // 渲染参数编辑器

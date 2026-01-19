@@ -3,7 +3,7 @@
  */
 
 .container {
-  background: rgb(137, 146, 235);
+  background: var(--node-color, rgb(137, 146, 235));
   color: white;
   padding: 8px 12px;
   border-radius: 10px;

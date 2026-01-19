@@ -17,22 +17,6 @@ import Blueprint from './components/Blueprint';
 import useStore from './store';
 import './styles/Global.css';
 
-// 容器样式
-const APP_CONTAINER_STYLE = {
-  display: 'flex',
-  flexDirection: 'column',
-  width: '100vw',
-  height: '100vh',
-  background: '#e2e9faff'
-};
-
-const WORKSPACE_STYLE = {
-  display: 'flex',
-  flexDirection: 'row',
-  flex: 1,
-  overflow: 'hidden'
-};
-
 function App() {
   // 注册键盘快捷键
   const { undo, redo, copySelectedNodes, pasteNodes } = useStore();
@@ -76,11 +60,11 @@ function App() {
   }, [undo, redo, copySelectedNodes, pasteNodes]);
 
   return (
-    <div style={APP_CONTAINER_STYLE}>
+    <div className="app-container">
       <Header />
-      <div style={WORKSPACE_STYLE}>
+      <div className="workspace">
         <Sidebar />
-        <div style={{ flex: 1, height: '100%' }}>
+        <div className="flex-1 h-full">
           <ReactFlowProvider>
             <Blueprint />
           </ReactFlowProvider>

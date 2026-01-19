@@ -13,6 +13,12 @@
   min-width: 200px;
   max-width: 280px;
   overflow: hidden;
+
+  /* 动态位置样式 */
+  left: var(--panel-x);
+  top: var(--panel-y);
+  transform: var(--panel-transform);
+  transform-origin: var(--panel-origin);
 }
 
 /* ========== 面板头部 ========== */
