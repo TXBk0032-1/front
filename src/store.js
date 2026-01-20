@@ -15,8 +15,8 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
 // 导入按意义分类的操作方法
-import { nodeActions } from "./utils/canvas/nodeActions";
-import { edgeActions } from "./utils/canvas/edgeActions";
+import { nodeActions } from "./utils/blueprint/nodeActions";
+import { edgeActions } from "./utils/blueprint/edgeActions";
 import { historyActions } from "./utils/core/historyActions";
 import { clipboardActions } from "./utils/core/clipboardActions";
 import { blueprintActions } from "./utils/data/blueprintActions";
