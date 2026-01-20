@@ -6,7 +6,7 @@
  * - 节点渲染
  * - 连线渲染
  */
-
+import { useStore } from '../store';
 import { useMemo } from 'react';
 import { ReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -34,6 +34,7 @@ const FLOW_CONFIG = {
 
 function Blueprint() {
   // 从 store 获取状态
+  const { nodes, edges } = useStore();
   const nodeTypes = useMemo(() => ({ baseNode: Node }), []);
 
   return (
@@ -41,7 +42,8 @@ function Blueprint() {
       <ReactFlow
         nodeTypes={nodeTypes}
         proOptions={{ hideAttribution: true }} // 隐藏水印
-
+        nodes={nodes}
+        edges={edges}
         {...FLOW_CONFIG}
       />
 

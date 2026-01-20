@@ -7,6 +7,7 @@
  */
 
 import '../styles/SideBar.css';
+import { useStore, setState } from '../store';
 
 
 // ========== 分类项组件 ==========
@@ -26,25 +27,26 @@ const CategoryItem = ({ label, color, isSelected, onClick }) => (
 
 // ========== 分类栏组件 ==========
 
-const CategoryBar = ({ categories, selectedCategory, onSelectCategory }) => {
+const CategoryBar = ({registry}) => {
+  const selectedCategory = useStore((state) => state.selectedCategory);
   return (
     <div className="category-bar">
       {/* "全部"按钮 */}
       <CategoryItem
         label="全部"
         color="#666"
-        isSelected={selectedCategory === null}
-        onClick={() => onSelectCategory(null)}
+        isSelected={selectedCategory === 'all'}
+        onClick={() => setState({ selectedCategory: 'all' })}
       />
 
       {/* 各分类按钮 */}
-      {categories.map(([key, data]) => (
+      {Object.entries(registry.categories).map(([key, data]) => (
         <CategoryItem
           key={key}
           label={data.label}
           color={data.color}
           isSelected={selectedCategory === key}
-          onClick={() => onSelectCategory(key)}
+          onClick={() => setState({ selectedCategory: key })}
         />
       ))}
     </div>
@@ -53,10 +55,11 @@ const CategoryBar = ({ categories, selectedCategory, onSelectCategory }) => {
 
 // ========== 节点项组件 ==========
 
-const NodeItem = ({ nodeId, color, registry }) => {
-
+const NodeItem = ({ nodeId, color }) => {
+  const registry = useStore((state) => state.registry.nodes);
+  const nodeData = registry[nodeId];
   const handleDragStart = (event) => {
-    event.dataTransfer.setData('application/reactflow', nodeId);
+    event.dataTransfer.setData('nodeId', nodeId);
     event.dataTransfer.effectAllowed = 'move';
   };
 
@@ -67,37 +70,48 @@ const NodeItem = ({ nodeId, color, registry }) => {
       draggable
       onDragStart={handleDragStart}
     >
-      label
+      {nodeData.label}
     </div>
   );
 };
 
 // ========== 节点分组组件 ==========
 
-const NodeGroup = ({ groupData, registry }) => {
+const NodeGroup = ({ groupData }) => {
   const { label, color, nodes = [] } = groupData;
-
   return (
     <div className="node-group">
       <div className="group-title" style={{ '--group-color': color }}>{label}</div>
       {nodes.map((nodeId) => (
-        <NodeItem key={nodeId} nodeId={nodeId} color={color} registry={registry} />
+        <NodeItem key={nodeId} nodeId={nodeId} color={color} />
       ))}
     </div>
   );
 };
 
+// ========== 节点列表组件 ==========
+
+const NodeList = ({ registry }) => {
+  const selectedCategory = useStore((state) => state.selectedCategory);
+  return (
+    <div className="node-list">
+      {/* registry.categories 是一个对象，每个键值对是一个分类组 */}
+      {Object.entries(registry.categories).map(([key, data]) => (
+        selectedCategory === 'all' || selectedCategory === key ? (
+          <NodeGroup key={key} groupData={data} />
+        ) : null
+      ))}
+    </div>
+  );
+}
 // ========== 主组件 ==========
 
 function Sidebar() {
+  const registry = useStore((state) => state.registry);
   return (
     <div className="side-bar">
-      {/* 分类筛选栏 */}
-      <CategoryBar/>
-
-      {/* 节点列表区域 */}
-      <div className="node-list">
-      </div>
+      <CategoryBar registry={registry} />
+      <NodeList registry={registry} />
     </div>
   );
 }
