@@ -55,11 +55,11 @@ const CategoryBar = ({registry}) => {
 
 // ========== 节点项组件 ==========
 
-const NodeItem = ({ nodeId, color }) => {
+const NodeItem = ({ nodeOpcode, color }) => {
   const registry = useStore((state) => state.registry.nodes);
-  const nodeData = registry[nodeId];
+  const nodeData = registry[nodeOpcode];
   const handleDragStart = (event) => {
-    event.dataTransfer.setData('nodeId', nodeId);
+    event.dataTransfer.setData('application/reactflow', nodeOpcode);
     event.dataTransfer.effectAllowed = 'move';
   };
 
@@ -82,8 +82,8 @@ const NodeGroup = ({ groupData }) => {
   return (
     <div className="node-group">
       <div className="group-title" style={{ '--group-color': color }}>{label}</div>
-      {nodes.map((nodeId) => (
-        <NodeItem key={nodeId} nodeId={nodeId} color={color} />
+      {nodes.map((nodeOpcode) => (
+        <NodeItem key={nodeOpcode} nodeOpcode={nodeOpcode} color={color} />
       ))}
     </div>
   );

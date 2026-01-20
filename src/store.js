@@ -25,7 +25,7 @@ export const store = createStore((set, get) => ({
   // ========== 悬浮组件 ==========
   nodeMenu: { visible: false, x: 0, y: 0, nodeId: null },
   nodePanel: { visible: false, x: 0, y: 0, nodeId: null },
-  renameModal: { visible: false, nodeId: null },
+  renameModal: { visible: false, nodeIds: [] },
 
   // ========== 历史记录 ==========
   history: [],
