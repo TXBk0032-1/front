@@ -17,10 +17,10 @@ export const store = createStore((set, get) => ({
 
   // ========== 选择状态 ==========
   selectedIds: [],
+  selectedCategory: "all",
 
   // ========== UI 状态 ==========
-  zoom: 100,
-  category: "all",
+  viewport: { x: 0, y: 0, zoom: 1 },
 
   // ========== 悬浮组件 ==========
   nodeMenu: { visible: false, x: 0, y: 0, nodeId: null },
@@ -36,8 +36,6 @@ export const store = createStore((set, get) => ({
 
   // ========== 节点定义（后端提供）==========
   registry: nodeRegistry,
-
-  selectedCategory: "all",
 }));
 
 export function useStore(selector) {

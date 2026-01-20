@@ -6,9 +6,9 @@
  * - 节点渲染
  * - 连线渲染
  */
-import { useStore } from '../store';
+import { useStore, setState } from '../store';
 import { useMemo } from 'react';
-import { ReactFlow } from '@xyflow/react';
+import { ReactFlowProvider, ReactFlow, Background } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import Node from './Node';
@@ -34,18 +34,27 @@ const FLOW_CONFIG = {
 
 function Blueprint() {
   // 从 store 获取状态
-  const { nodes, edges } = useStore();
+  const nodes = useStore((state) => state.nodes);
+  const edges = useStore((state) => state.edges);
+  const viewport = useStore((state) => state.viewport);
+
   const nodeTypes = useMemo(() => ({ baseNode: Node }), []);
 
   return (
     <div className="blueprint">
-      <ReactFlow
-        nodeTypes={nodeTypes}
-        proOptions={{ hideAttribution: true }} // 隐藏水印
-        nodes={nodes}
-        edges={edges}
-        {...FLOW_CONFIG}
-      />
+      <ReactFlowProvider>
+        <ReactFlow
+          nodeTypes={nodeTypes}
+          proOptions={{ hideAttribution: true }} // 隐藏水印
+          nodes={nodes}
+          edges={edges}
+          viewport={viewport}
+          onViewportChange={(newViewport) => setState({ viewport: newViewport })}
+          {...FLOW_CONFIG}
+        >
+          <Background />
+        </ReactFlow>
+      </ReactFlowProvider>
 
       <ToolBar />
       <NodeMenu />

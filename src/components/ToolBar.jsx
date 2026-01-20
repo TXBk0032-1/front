@@ -6,6 +6,8 @@
  * - 缩放控制
  * - 整理布局按钮
  */
+import { useStore } from '../store';
+
 import undoIcon from '../assets/ToolBar/undo.svg';
 import redoIcon from '../assets/ToolBar/redo.svg';
 import zoomInIcon from '../assets/ToolBar/zoom-in.svg';
@@ -21,6 +23,7 @@ const ToolBarButton = ({ icon, alt, title, onClick }) => (
 );
 
 function ToolBar() {
+  const zoom = useStore((state) => state.viewport.zoom);
   return (
     <div className="toolbar">
       {/* 历史操作 */}
@@ -34,7 +37,9 @@ function ToolBar() {
       {/* 缩放控制 */}
       <div className="toolbar-group">
         <ToolBarButton icon={zoomOutIcon} alt="缩小" title="缩小" />
-        <span className="zoom-display" title="点击重置视图">100%</span>
+        <span className="zoom-display" title="点击重置视图">
+          {`${Math.round(zoom * 100)}%`}
+        </span>
         <ToolBarButton icon={zoomInIcon} alt="放大" title="放大" />
       </div>
 
