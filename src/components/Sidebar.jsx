@@ -8,6 +8,7 @@
 
 import '../styles/SideBar.css';
 
+
 // ========== 分类项组件 ==========
 
 const CategoryItem = ({ label, color, isSelected, onClick }) => (
@@ -37,7 +38,7 @@ const CategoryBar = ({ categories, selectedCategory, onSelectCategory }) => {
       />
 
       {/* 各分类按钮 */}
-      {/* {categories.map(([key, data]) => (
+      {categories.map(([key, data]) => (
         <CategoryItem
           key={key}
           label={data.label}
@@ -45,7 +46,7 @@ const CategoryBar = ({ categories, selectedCategory, onSelectCategory }) => {
           isSelected={selectedCategory === key}
           onClick={() => onSelectCategory(key)}
         />
-      ))} */}
+      ))}
     </div>
   );
 };

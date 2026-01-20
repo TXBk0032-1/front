@@ -7,6 +7,7 @@
  * - 右侧：操作按钮
  */
 import '../styles/Header.css';
+import { setState, useStore } from '../store';
 
 // Logo 组件
 const Logo = () => (
@@ -14,13 +15,17 @@ const Logo = () => (
 );
 
 // 蓝图名称输入组件
-const BlueprintNameInput = () => (
-  <input
-    type="text"
-    className="blueprint-name-input"
-    placeholder="未命名蓝图"
-  />
-);
+function BlueprintNameInput() {
+  const name = useStore(state => state.name);
+  return (
+    <input
+      type="text"
+      className="blueprint-name-input"
+      placeholder="未命名蓝图"
+      value={name}
+      onChange={(e) => setState({ name: e.target.value })} />
+  );
+}
 
 // 按钮组件
 const ActionButtons = () => (

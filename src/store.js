@@ -6,3 +6,48 @@
  * 
  */
 
+import { createStore } from 'zustand/vanilla'
+import { useStore as useZustandStore } from 'zustand'
+
+export const store = createStore((set, get) => ({
+  // ========== 蓝图基础数据 ==========
+  name: '我的架构',
+  nodes: [],
+  edges: [],
+  
+  // ========== 选择状态 ==========
+  selectedIds: [],
+  
+  // ========== UI 状态 ==========
+  zoom: 100,
+  category: 'all',
+  
+  // ========== 悬浮组件 ==========
+  nodeMenu: { visible: false, x: 0, y: 0, nodeId: null },
+  nodePanel: { visible: false, x: 0, y: 0, nodeId: null },
+  renameModal: { visible: false, nodeId: null },
+  
+  // ========== 历史记录 ==========
+  history: [],
+  historyIndex: -1,
+  
+  // ========== 剪贴板 ==========
+  clipboard: [],
+  
+  // ========== 节点定义（后端提供）==========
+  nodeCategories: [],
+  nodeDefinitions: [],
+}))
+
+
+export function useStore(selector) {
+  return useZustandStore(store, selector)
+}
+
+export function getState() {
+  return store.getState()
+}
+
+export function setState(partial) {
+  store.setState(partial)
+}
