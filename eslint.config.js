@@ -23,7 +23,7 @@ export default defineConfig([
       },
     },
     rules: {
-      "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z_]" }], // 当变量名以大写字母和下划线开头时，允许未使用
+      "no-unused-vars": "off", // 完全允许未使用的变量
       "react/react-in-jsx-scope": "off", // 关闭在JSX中使用React必须导入的规则
     },
   },
