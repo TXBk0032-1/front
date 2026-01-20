@@ -8,11 +8,11 @@
  */
 
 
-import copyPasteIcon from '@/assets/ContextMenu/copy-paste.svg';
-import deleteIcon from '@/assets/ContextMenu/delete-node.svg';
-import renameIcon from '@/assets/ContextMenu/rename.svg';
+import copyPasteIcon from '../assets/ContextMenu/copy-paste.svg';
+import deleteIcon from '../assets/ContextMenu/delete-node.svg';
+import renameIcon from '../assets/ContextMenu/rename.svg';
 
-import '@/styles/NodeMenu.css';
+import '../styles/NodeMenu.css';
 
 // ========== 菜单项组件 ==========
 

@@ -6,10 +6,7 @@
  * - 节点列表：显示可拖拽的节点
  */
 
-import { useState, useMemo } from 'react';
-import useStore from '@/store';
-import { getNodeConfig, getAllCategories, getNodeRegistry } from '@/constants/nodeRegistry';
-import '@/styles/SideBar.css';
+import '../styles/SideBar.css';
 
 // ========== 分类项组件 ==========
 
@@ -40,7 +37,7 @@ const CategoryBar = ({ categories, selectedCategory, onSelectCategory }) => {
       />
 
       {/* 各分类按钮 */}
-      {categories.map(([key, data]) => (
+      {/* {categories.map(([key, data]) => (
         <CategoryItem
           key={key}
           label={data.label}
@@ -48,7 +45,7 @@ const CategoryBar = ({ categories, selectedCategory, onSelectCategory }) => {
           isSelected={selectedCategory === key}
           onClick={() => onSelectCategory(key)}
         />
-      ))}
+      ))} */}
     </div>
   );
 };
@@ -56,7 +53,6 @@ const CategoryBar = ({ categories, selectedCategory, onSelectCategory }) => {
 // ========== 节点项组件 ==========
 
 const NodeItem = ({ nodeId, color, registry }) => {
-  const config = getNodeConfig(nodeId, registry);
 
   const handleDragStart = (event) => {
     event.dataTransfer.setData('application/reactflow', nodeId);
@@ -70,7 +66,7 @@ const NodeItem = ({ nodeId, color, registry }) => {
       draggable
       onDragStart={handleDragStart}
     >
-      {config.label || nodeId}
+      label
     </div>
   );
 };
@@ -93,36 +89,13 @@ const NodeGroup = ({ groupData, registry }) => {
 // ========== 主组件 ==========
 
 function Sidebar() {
-  const storeRegistry = useStore((state) => state.registry);
-  
-  // 使用外部传入的注册表，或使用默认注册表
-  const registry = useMemo(() => {
-    return storeRegistry || getNodeRegistry();
-  }, [storeRegistry]);
-
-  const categories = useMemo(() => getAllCategories(registry), [registry]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-
-  // 根据选中状态筛选分类
-  const filteredCategories = useMemo(() => {
-    if (selectedCategory === null) return categories;
-    return categories.filter(([key]) => key === selectedCategory);
-  }, [categories, selectedCategory]);
-
   return (
     <div className="side-bar">
       {/* 分类筛选栏 */}
-      <CategoryBar
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-      />
+      <CategoryBar/>
 
       {/* 节点列表区域 */}
       <div className="node-list">
-        {filteredCategories.map(([groupKey, groupData]) => (
-          <NodeGroup key={groupKey} groupData={groupData} registry={registry} />
-        ))}
       </div>
     </div>
   );

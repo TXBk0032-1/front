@@ -6,12 +6,12 @@
  * - 缩放控制
  * - 整理布局按钮
  */
-import undoIcon from '@/assets/ToolBar/undo.svg';
-import redoIcon from '@/assets/ToolBar/redo.svg';
-import zoomInIcon from '@/assets/ToolBar/zoom-in.svg';
-import zoomOutIcon from '@/assets/ToolBar/zoom-out.svg';
-import arrangeIcon from '@/assets/ToolBar/arrange.svg';
-import '@/styles/ToolBar.css';
+import undoIcon from '../assets/ToolBar/undo.svg';
+import redoIcon from '../assets/ToolBar/redo.svg';
+import zoomInIcon from '../assets/ToolBar/zoom-in.svg';
+import zoomOutIcon from '../assets/ToolBar/zoom-out.svg';
+import arrangeIcon from '../assets/ToolBar/arrange.svg';
+import '../styles/ToolBar.css';
 
 // 提取按钮组件
 const ToolBarButton = ({ icon, alt, title, onClick }) => (

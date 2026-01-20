@@ -6,7 +6,7 @@
  * - 中间：蓝图名称输入框
  * - 右侧：操作按钮
  */
-import '@/styles/Header.css';
+import '../styles/Header.css';
 
 // Logo 组件
 const Logo = () => (

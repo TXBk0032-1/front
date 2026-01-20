@@ -11,14 +11,13 @@ import { useMemo } from 'react';
 import { ReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import useStore from '@/store';
 import Node from './Node';
 import ToolBar from './ToolBar';
 import NodeMenu from './NodeMenu';
 import PropertyPanel from './NodePanel';
 import RenameModal from './RenameModal';
 
-import '@/styles/Blueprint.css';
+import '../styles/Blueprint.css';
 
 // React Flow 配置
 const FLOW_CONFIG = {
@@ -35,15 +34,11 @@ const FLOW_CONFIG = {
 
 function Blueprint() {
   // 从 store 获取状态
-  const nodes = useStore((state) => state.nodes);
-  const edges = useStore((state) => state.edges);
   const nodeTypes = useMemo(() => ({ baseNode: Node }), []);
 
   return (
     <div className="blueprint">
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
         nodeTypes={nodeTypes}
         proOptions={{ hideAttribution: true }} // 隐藏水印
 

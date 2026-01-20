@@ -9,8 +9,7 @@
 
 import { Handle, Position, useEdges, useReactFlow } from '@xyflow/react';
 import { Button } from '@heroui/react';
-import useStore from '@/store';
-import '@/styles/Node.css';
+import '../styles/Node.css';
 
 const DRAG_THRESHOLD = 5;
 
@@ -58,8 +57,7 @@ const OutputPort = ({ id, label }) => (
 // ========== 节点主体组件 ==========
 
 const Node = ({ data, id }) => {
-  const openRenameModal = useStore((state) => state.openRenameModal);
-  
+
   const color = data.color || 'rgb(137, 146, 235)';
   const label = data.label || '未命名节点';
   const inputs = data.inputs || [];
@@ -67,7 +65,6 @@ const Node = ({ data, id }) => {
 
   const handleDoubleClick = (event) => {
     event.stopPropagation();
-    openRenameModal(id);
   };
 
   return (
