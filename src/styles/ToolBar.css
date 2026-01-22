@@ -10,6 +10,7 @@
   flex-direction: row;
   align-items: center;
   gap: 8px;
+  z-index: 1000;
 }
 
 /* ========== 工具栏按钮 ========== */

@@ -60,7 +60,7 @@ const NodeItem = ({ nodeOpcode, color }) => {
   const nodeData = registry[nodeOpcode];
   const handleDragStart = (event) => {
     event.dataTransfer.setData('opcode', nodeOpcode);
-    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.effectAllowed = 'copy';
   };
 
   return (

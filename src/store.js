@@ -5,11 +5,9 @@
  * 所有组件相关信息全部绑定在这个 store 中，store 信息被修改就对应智能更新，不用让程序员操心react的更新渲染问题
  *
  */
+import { create } from "zustand";
 import nodeRegistry from "./constants/节点格式示例.json";
-import { createStore } from "zustand/vanilla";
-import { useStore as useZustandStore } from "zustand";
-
-export const store = createStore((set, get) => ({
+export const useStore = create((set, get) => ({
   // ========== 蓝图基础数据 ==========
   blueprintName: "我的架构",
   nodes: [],
@@ -38,14 +36,5 @@ export const store = createStore((set, get) => ({
   registry: nodeRegistry,
 }));
 
-export function useStore(selector) {
-  return useZustandStore(store, selector);
-}
-
-export function getState() {
-  return store.getState();
-}
-
-export function setState(partial) {
-  store.setState(partial);
-}
+export const getState = useStore.getState;
+export const setState = useStore.setState;

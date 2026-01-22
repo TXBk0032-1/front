@@ -1,20 +1,30 @@
-import { useStore } from "../../store"; // setState 通常是 useStore 的属性
+import { getState, setState } from "../../store";
 import { generateId } from "../data/generateId";
 
 export function addNode(nodeOpcode, position, customProps = {}) {
-    const { registry } = useStore.getState(); // 这一步躲不掉，因为要拿模板
+    const { registry, nodes } = getState();
+
     const nodeTemplate = registry.nodes[nodeOpcode];
+    if (!nodeTemplate) {
+        console.error(`找不到 opcode 为 ${nodeOpcode} 的模板`);
+        return;
+    }
 
-    if (!nodeTemplate) return;
+    // 拼装符合 React Flow 规范的节点结构
+    const newNode = {
+        id: generateId(),
+        type: 'baseNode',
+        position,
+        data: {
+            ...nodeTemplate,
+            ...customProps
+        },
+    };
 
-    const newNode = { ...nodeTemplate, type: 'baseNode', id: generateId(), ...position, ...customProps };
-
-    // 直接在回调里拿最新的 nodes 数组
-    useStore.setState((state) => ({
-        nodes: [...state.nodes, newNode]
-    }));
-    console.log(`添加节点：${newNode.id}`);
+    // 纯外部调用 setState 更新数组
+    setState({
+        nodes: [...nodes, newNode]
+    });
 
     return newNode;
 }
-
