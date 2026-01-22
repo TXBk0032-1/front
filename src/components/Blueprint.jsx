@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { ReactFlow, Background, useReactFlow, applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { FLOW_CONFIG } from '../constants/config';
+import { setViewport } from '../utils/blueprint/viewport';
 
 import Node from './Node';
 import ToolBar from './ToolBar';
@@ -41,6 +42,7 @@ const onDragOver = (e) => {
 function Blueprint() {
   const nodes = useStore((s) => s.nodes);
   const edges = useStore((s) => s.edges);
+  const viewport = useStore((s) => s.viewport);
   const nodeTypes = useMemo(() => ({ baseNode: Node }), []);
   const { screenToFlowPosition } = useReactFlow();
 
@@ -59,6 +61,8 @@ function Blueprint() {
       edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
+      viewport={viewport}
+      onViewportChange={setViewport}
       onConnect={onConnect}
       nodeTypes={nodeTypes}
       proOptions={{ hideAttribution: true }}

@@ -63,15 +63,10 @@ const Node = ({ data, id }) => {
   const inputs = data.inputs || [];
   const outputs = data.outputs || [];
 
-  const handleDoubleClick = (event) => {
-    event.stopPropagation();
-  };
-
   return (
     <Button
       className="container"
       style={{ background: color }}
-      onDoubleClick={handleDoubleClick}
     >
       {/* 左侧：输入端口区域 */}
       <div className="port-container">

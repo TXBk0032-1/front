@@ -7,6 +7,7 @@
  * - 整理布局按钮
  */
 import { useStore } from '../store';
+import { zoomIn, zoomOut, resetViewport } from '../utils/blueprint/viewport';
 
 import undoIcon from '../assets/ToolBar/undo.svg';
 import redoIcon from '../assets/ToolBar/redo.svg';
@@ -14,6 +15,7 @@ import zoomInIcon from '../assets/ToolBar/zoom-in.svg';
 import zoomOutIcon from '../assets/ToolBar/zoom-out.svg';
 import arrangeIcon from '../assets/ToolBar/arrange.svg';
 import '../styles/ToolBar.css';
+
 
 // 提取按钮组件
 const ToolBarButton = ({ icon, alt, title, onClick }) => (
@@ -24,6 +26,7 @@ const ToolBarButton = ({ icon, alt, title, onClick }) => (
 
 function ToolBar() {
   const zoom = useStore((state) => state.viewport.zoom);
+
   return (
     <div className="toolbar">
       {/* 历史操作 */}
@@ -36,11 +39,11 @@ function ToolBar() {
 
       {/* 缩放控制 */}
       <div className="toolbar-group">
-        <ToolBarButton icon={zoomOutIcon} alt="缩小" title="缩小" />
-        <span className="zoom-display" title="点击重置视图">
+        <ToolBarButton icon={zoomOutIcon} alt="缩小" title="缩小" onClick={() => zoomOut(0.8)} />
+        <span className="zoom-display" title="点击重置视图" onClick={resetViewport}>
           {`${Math.round(zoom * 100)}%`}
         </span>
-        <ToolBarButton icon={zoomInIcon} alt="放大" title="放大" />
+        <ToolBarButton icon={zoomInIcon} alt="放大" title="放大" onClick={() => zoomIn(1.2)} />
       </div>
 
 
