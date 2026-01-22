@@ -1,52 +1,78 @@
 import { getState, setState } from "../../store";
 
 export function selectNode(nodeId, append = false) {
-    const { selectedIds } = getState();
+    const { selectedIds, nodes } = getState();
 
     let newSelectedIds;
 
     if (append) {
-        // 追加模式：如果已选中则取消选中，未选中则添加
         if (selectedIds.includes(nodeId)) {
             newSelectedIds = selectedIds.filter(id => id !== nodeId);
         } else {
             newSelectedIds = [...selectedIds, nodeId];
         }
     } else {
-        // 非追加模式：只选中当前节点
         newSelectedIds = [nodeId];
     }
 
+    const newNodes = nodes.map(node => ({
+        ...node,
+        selected: newSelectedIds.includes(node.id)
+    }));
+
     setState({
-        selectedIds: newSelectedIds
+        selectedIds: newSelectedIds,
+        nodes: newNodes
     });
 
     return newSelectedIds;
 }
 
 export function selectNodes(nodeIds) {
+    const { nodes } = getState();
+
+    const newNodes = nodes.map(node => ({
+        ...node,
+        selected: nodeIds.includes(node.id)
+    }));
+
     setState({
-        selectedIds: [...nodeIds]
+        selectedIds: [...nodeIds],
+        nodes: newNodes
     });
 
     return nodeIds;
 }
 
 export function deselectNode(nodeId) {
-    const { selectedIds } = getState();
+    const { selectedIds, nodes } = getState();
 
     const newSelectedIds = selectedIds.filter(id => id !== nodeId);
 
+    const newNodes = nodes.map(node => ({
+        ...node,
+        selected: newSelectedIds.includes(node.id)
+    }));
+
     setState({
-        selectedIds: newSelectedIds
+        selectedIds: newSelectedIds,
+        nodes: newNodes
     });
 
     return newSelectedIds;
 }
 
 export function clearSelection() {
+    const { nodes } = getState();
+
+    const newNodes = nodes.map(node => ({
+        ...node,
+        selected: false
+    }));
+
     setState({
-        selectedIds: []
+        selectedIds: [],
+        nodes: newNodes
     });
 
     return [];

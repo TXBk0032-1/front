@@ -9,6 +9,7 @@
 
 import { Handle, Position, useEdges, useReactFlow } from '@xyflow/react';
 import { Button } from '@heroui/react';
+import { selectNode } from '../utils/blueprint/selectNode';
 import '../styles/Node.css';
 
 const DRAG_THRESHOLD = 5;
@@ -63,10 +64,17 @@ const Node = ({ data, id }) => {
   const inputs = data.inputs || [];
   const outputs = data.outputs || [];
 
+  const handleClick = (event) => {
+    event.stopPropagation();
+    const isCtrlPressed = event.ctrlKey || event.metaKey;
+    selectNode(id, isCtrlPressed);
+  };
+
   return (
     <Button
       className="container"
       style={{ background: color }}
+      onClick={handleClick}
     >
       {/* 左侧：输入端口区域 */}
       <div className="port-container">
