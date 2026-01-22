@@ -7,6 +7,7 @@ import { FLOW_CONFIG } from '../constants/config';
 import Node from './Node';
 import ToolBar from './ToolBar';
 import { addNode } from '../utils/blueprint/addNode';
+import { addEdge } from '../utils/blueprint/addEdge';
 
 const onNodesChange = (changes) => {
   setState((state) => ({
@@ -18,6 +19,15 @@ const onEdgesChange = (changes) => {
   setState((state) => ({
     edges: applyEdgeChanges(changes, state.edges)
   }));
+};
+
+const onConnect = (connection) => {
+  addEdge(
+    connection.source,
+    connection.sourceHandle,
+    connection.target,
+    connection.targetHandle
+  );
 };
 
 const onDragOver = (e) => {
@@ -47,8 +57,9 @@ function Blueprint() {
       edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
       nodeTypes={nodeTypes}
-      proOptions={{ hideAttribution: true }} // 隐藏水印
+      proOptions={{ hideAttribution: true }}
       {...FLOW_CONFIG}
       onDragOver={onDragOver}
       onDrop={onDrop}
