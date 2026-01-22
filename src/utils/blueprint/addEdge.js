@@ -15,9 +15,14 @@ export function addEdge(sourceNodeId, sourceHandleId, targetNodeId, targetHandle
         ...customProps
     };
 
+    // 过滤掉所有连接到目标输入端口的旧连接线，然后添加新连接线
+    const newEdges = edges.filter(
+        edge => !(edge.target === targetNodeId && edge.targetHandle === targetHandleId)
+    );
+
     // 纯外部调用 setState 更新数组
     setState({
-        edges: [...edges, newEdge]
+        edges: [...newEdges, newEdge]
     });
 
     return newEdge;
