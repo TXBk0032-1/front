@@ -59,7 +59,7 @@ const NodeItem = ({ nodeOpcode, color }) => {
   const registry = useStore((state) => state.registry.nodes);
   const nodeData = registry[nodeOpcode];
   const handleDragStart = (event) => {
-    event.dataTransfer.setData('application/reactflow', nodeOpcode);
+    event.dataTransfer.setData('opcode', nodeOpcode);
     event.dataTransfer.effectAllowed = 'move';
   };
 
