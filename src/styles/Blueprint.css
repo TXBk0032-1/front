@@ -19,6 +19,7 @@
  */
 .react-flow__nodesselection-rect {
   display: none !important;
+  z-index: -1 !important;
 }
 
 /**
