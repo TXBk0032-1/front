@@ -1,14 +1,6 @@
-/**
- * Blueprint.jsx - 蓝图画布组件
- * 
- * 主画布区域，包含：
- * - React Flow 画布
- * - 节点渲染
- * - 连线渲染
- */
 import { useStore, setState } from '../store';
 import { useMemo } from 'react';
-import { ReactFlowProvider, ReactFlow, Background } from '@xyflow/react';
+import { ReactFlow, Background, useReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import Node from './Node';
@@ -18,6 +10,8 @@ import PropertyPanel from './NodePanel';
 import RenameModal from './RenameModal';
 
 import '../styles/Blueprint.css';
+
+import { addNode } from '../utils/blueprint/addNode';
 
 // React Flow 配置
 const FLOW_CONFIG = {
@@ -37,24 +31,50 @@ function Blueprint() {
   const nodes = useStore((state) => state.nodes);
   const edges = useStore((state) => state.edges);
   const viewport = useStore((state) => state.viewport);
+  const { screenToFlowPosition } = useReactFlow();
 
   const nodeTypes = useMemo(() => ({ baseNode: Node }), []);
 
+  const onDragOver = (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  };
+
+  const onDrop = (event) => {
+    event.preventDefault();
+
+    // 获取拖拽源设置的数据
+    const nodeOpcode = event.dataTransfer.getData('opcode');
+
+    if (nodeOpcode) {
+      // 计算节点在画布中的位置
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      
+      // 调用添加节点的逻辑
+      addNode(nodeOpcode, position);
+    }
+  };
+
   return (
     <div className="blueprint">
-      <ReactFlowProvider>
-        <ReactFlow
-          nodeTypes={nodeTypes}
-          proOptions={{ hideAttribution: true }} // 隐藏水印
-          nodes={nodes}
-          edges={edges}
-          viewport={viewport}
-          onViewportChange={(newViewport) => setState({ viewport: newViewport })}
-          {...FLOW_CONFIG}
-        >
-          <Background />
-        </ReactFlow>
-      </ReactFlowProvider>
+      <ReactFlow
+        nodeTypes={nodeTypes}
+        proOptions={{ hideAttribution: true }}
+        nodes={nodes}
+        edges={edges}
+        viewport={viewport}
+        onViewportChange={(newViewport) => setState({ viewport: newViewport })}
+        {...FLOW_CONFIG}
+        
+        // 分别绑定拖拽和放置事件
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+      >
+        <Background />
+      </ReactFlow>
 
       <ToolBar />
       <NodeMenu />

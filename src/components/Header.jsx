@@ -16,14 +16,14 @@ const Logo = () => (
 
 // 蓝图名称输入组件
 function BlueprintNameInput() {
-  const name = useStore(state => state.name);
+  const blueprintName = useStore(state => state.blueprintName);
   return (
     <input
       type="text"
       className="blueprint-name-input"
       placeholder="未命名蓝图"
-      value={name}
-      onChange={(e) => setState({ name: e.target.value })} />
+      value={blueprintName}
+      onChange={(e) => setState({ blueprintName: e.target.value })} />
   );
 }
 

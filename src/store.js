@@ -11,7 +11,7 @@ import { useStore as useZustandStore } from "zustand";
 
 export const store = createStore((set, get) => ({
   // ========== 蓝图基础数据 ==========
-  name: "我的架构",
+  blueprintName: "我的架构",
   nodes: [],
   edges: [],
 
