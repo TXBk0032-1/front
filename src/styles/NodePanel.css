@@ -15,7 +15,7 @@
   overflow: hidden;
   /* 里面的内容从来不换行 */
   white-space: nowrap;
-  
+
 
   /* top: 0;
   left: 0; */
@@ -63,12 +63,26 @@
   font-size: 12px;
   font-weight: 500;
   color: rgb(111, 125, 176);
+
 }
 
 /* ========== 参数输入框 ========== */
 
 .param-input {
+  field-sizing: content;
   font-size: 12px;
+  width: auto;
+  max-width: 100px;
+  height: 25px;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
+.number-input {
+  border-radius: 100px;
 }
 
 /* ========== 滚动条样式 ========== */

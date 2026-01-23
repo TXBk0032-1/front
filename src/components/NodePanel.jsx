@@ -27,7 +27,7 @@ const NumberInput = ({ label, value, onChange }) => (
       placeholder={label}
       value={String(value)}
       onChange={(e) => onChange(Number(e.target.value))}
-      className="param-input"
+      className="param-input number-input"
     />
   </div>
 );
