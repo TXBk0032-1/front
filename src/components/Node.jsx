@@ -81,6 +81,8 @@ const Node = ({ data, id }) => {
   const handleContextMenu = (event) => {
     event.preventDefault();
     event.stopPropagation();
+    const isCtrlPressed = event.ctrlKey || event.metaKey;
+    selectNode(id, isCtrlPressed);
     bindNodeMenuAndPanelToNode(id);
     showNodeMenuAndPanel();
     console.log('右键点击节点');

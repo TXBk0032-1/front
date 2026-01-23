@@ -42,9 +42,6 @@ const onDragOver = (e) => {
   e.dataTransfer.dropEffect = 'copy';
 };
 
-const onClick = (e) => {
-  hideNodeMenuAndPanel();
-}
 const onContextMenu = (e) => {
   e.preventDefault();
   e.stopPropagation();
@@ -77,7 +74,8 @@ function Blueprint() {
       onViewportChange={setViewport}
       onConnect={onConnect}
       nodeTypes={nodeTypes}
-      onClick={onClick}
+      onClick={hideNodeMenuAndPanel}
+      onPaneContextMenu={hideNodeMenuAndPanel}
       onContextMenu={onContextMenu}
       proOptions={{ hideAttribution: true }}
       {...FLOW_CONFIG}
