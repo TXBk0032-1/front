@@ -9,7 +9,9 @@
 
 import { useStore } from '../store';
 import { Input, Switch } from '@heroui/react';
-import {  updateNodePanelPosition } from '../utils/blueprint/nodePanel';
+import { calcPositionAroundNode } from '../utils/data/position';
+
+import { useReactFlow } from '@xyflow/react';
 
 import '../styles/NodePanel.css';
 
@@ -61,20 +63,70 @@ const BooleanSwitch = ({ label, value, onChange }) => (
 // ========== NodePanel 组件 ==========
 
 export function NodePanel() {
-  const nodePanel = useStore((state) => state.nodePanel);
+  const { visible, nodeId } = useStore((s) => s.nodePanel);
+  const nodes = useStore((s) => s.nodes);
+  const viewport = useStore((s) => s.viewport);
+  const { flowToScreenPosition } = useReactFlow();
 
-  if (!nodePanel.visible) {
-    return null;
-  }
-  updateNodePanelPosition();
+  if (!visible || !nodeId) return null;
+
+  const targetNode = nodes.find(n => n.id === nodeId);
+
+  if (!targetNode) return null;
+
+  const panelPosition = calcPositionAroundNode(targetNode, flowToScreenPosition, viewport.zoom, 'below');
+  const scale = viewport.zoom;
+  const positionStyle = calcPositionStyle(panelPosition.x, panelPosition.y, scale);
+
+  // 下面是一些节点信息提前提取
+  console.log(targetNode);
+  /* {
+    "id": "8x4.assssuf7a369c15cecca004d",
+    "type": "baseNode",
+    "position": {
+        "x": 222.5795440673828,
+        "y": 143.9808235168457
+    },
+    "data": {
+        "label": "全连接层",
+        "opcode": "linear",
+        "inputs": [
+            {
+                "id": "x",
+                "label": "x"
+            }
+        ],
+        "outputs": [
+            {
+                "id": "y",
+                "label": "y"
+            }
+        ],
+        "params": {
+            "输出特征数": {
+                "label": "输出特征数",
+                "type": "number",
+                "default": "128"
+            },
+            "bias": {
+                "label": "bias",
+                "type": "boolean",
+                "default": true
+            }
+        },
+        "color": "#82CBFA"
+    },
+    "measured": {
+        "width": 150,
+        "height": 36
+    }
+} */
 
   return (
     <div
+      id='node-panel'
       className="node-panel"
-      style={{
-        left: nodePanel.x,
-        top: nodePanel.y
-      }}
+      style={positionStyle}
     >
       <div className="panel-header">
         <span className="panel-title">节点 属性</span>
@@ -86,8 +138,14 @@ export function NodePanel() {
   );
 }
 
-// ========== RenameModal 组件 ==========
-
+function calcPositionStyle(x, y, scale) {
+  return {
+    left: x,
+    top: y,
+    transform: `translate(-50%) scale(${scale})`,                       // 水平居中 + 向上偏移 + 缩放
+    transformOrigin: 'center top',                                          // 缩放原点在顶部中心
+  };
+}
 
 
 // 默认导出两个组件

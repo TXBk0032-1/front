@@ -37,7 +37,7 @@ function NodeMenu() {
   const menuPosition = calcPositionAroundNode(targetNode, flowToScreenPosition, viewport.zoom, 'above');
   // 根据viewport来进行菜单的缩放
   const scale = viewport.zoom;
-  const positionStyle = calcPositionStyle(menuPosition.x, menuPosition.y, menuPosition.position, scale);
+  const positionStyle = calcPositionStyle(menuPosition.x, menuPosition.y, scale);
 
 
   return (
@@ -52,21 +52,12 @@ function NodeMenu() {
     </div>
   );
 }
-function calcPositionStyle(x, y, position, scale) {
-  if (position === 'above') {
-    return {
-      left: x,
-      top: y,
-      transform: `translate(-50%, -100%) scale(${scale})`,                       // 水平居中 + 向上偏移 + 缩放
-      transformOrigin: 'center bottom',                                          // 缩放原点在底部中心
-    };
-  } else {
-    return {
-      left: x,
-      top: y,
-      transform: `translateX(-50%) scale(${scale})`,                             // 水平居中 + 缩放
-      transformOrigin: 'center top',                                             // 缩放原点在顶部中心
-    };
-  }
+function calcPositionStyle(x, y, scale) {
+  return {
+    left: x,
+    top: y,
+    transform: `translate(-50%, -100%) scale(${scale})`,                       // 水平居中 + 向上偏移 + 缩放
+    transformOrigin: 'center bottom',                                          // 缩放原点在底部中心
+  };
 }
 export default NodeMenu;

@@ -14,11 +14,6 @@
   max-width: 280px;
   overflow: hidden;
 
-  /* 动态位置样式 */
-  left: var(--panel-x);
-  top: var(--panel-y);
-  transform: var(--panel-transform);
-  transform-origin: var(--panel-origin);
   /* top: 0;
   left: 0; */
 }
@@ -91,4 +86,3 @@
 .panel-content::-webkit-scrollbar-thumb:hover {
   background: rgba(111, 125, 176, 0.5);
 }
-

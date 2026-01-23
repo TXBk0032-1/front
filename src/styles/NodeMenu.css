@@ -20,12 +20,7 @@
   white-space: nowrap;
   color: rgb(111, 125, 176);
 
-  /* 动态位置样式 */
-  left: var(--menu-x);
-  top: var(--menu-y);
-  transform: translate(-50%, -50%);
-  transform-origin: center center;
-  scale: var(--menu-scale);
+
 
   /* top: 0;
   left: 0; */
@@ -51,6 +46,8 @@
   align-items: center;
   justify-content: center;
   transition: all 0.1s ease-in-out;
+  height: 45px;
+  width: 60px;
 }
 
 .icon-container:hover {
