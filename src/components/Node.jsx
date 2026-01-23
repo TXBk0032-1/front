@@ -11,6 +11,7 @@ import { Handle, Position, useEdges, useReactFlow } from '@xyflow/react';
 import { Button } from '@heroui/react';
 import { selectNode } from '../utils/blueprint/selectNode';
 import { bindNodeMenuAndPanelToNode, showNodeMenuAndPanel, hideNodeMenuAndPanel } from '../utils/index';
+import { showRenameModal } from '../utils/blueprint/renameModal';
 import '../styles/Node.css';
 
 const DRAG_THRESHOLD = 5;
@@ -70,6 +71,13 @@ const Node = ({ data, id }) => {
     const isCtrlPressed = event.ctrlKey || event.metaKey;
     selectNode(id, isCtrlPressed);
   };
+
+  const handleDoubleClick = (event) => {
+    event.stopPropagation();
+    selectNode(id, false); // 选中当前节点
+    showRenameModal(); // 显示重命名弹窗
+  };
+
   const handleContextMenu = (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -83,6 +91,7 @@ const Node = ({ data, id }) => {
       className="container"
       style={{ background: color, '--node-color': color }}
       onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
     >
       {/* 左侧：输入端口区域 */}

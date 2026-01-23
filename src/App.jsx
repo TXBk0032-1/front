@@ -9,6 +9,7 @@
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Blueprint from './components/Blueprint';
+import RenameModal from './components/RenameModal';
 import './styles/Global.css';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Sidebar />
         <Blueprint />
       </main>
+      <RenameModal />
     </div>
   );
 }

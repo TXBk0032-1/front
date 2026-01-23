@@ -1,5 +1,6 @@
 import { useStore } from '../store';
 import { hideNodeMenu } from '../utils/blueprint/nodeMenu';
+import { showRenameModal } from '../utils/blueprint/renameModal';
 import { calcPositionAroundNode } from '../utils/data/position';
 
 // 使用react flow的转换函数 flowToScreenPosition 来计算位置
@@ -11,9 +12,9 @@ import renameIcon from '../assets/ContextMenu/rename.svg';
 
 import '../styles/NodeMenu.css';
 
-// ========== 菜单项组件 (没变) ==========
-const MenuItem = ({ icon, label }) => (
-  <div className="node-menu-item" onClick={() => hideNodeMenu()}>
+// ========== 菜单项组件 ==========
+const MenuItem = ({ icon, label, onClick }) => (
+  <div className="node-menu-item" onClick={onClick || (() => hideNodeMenu())}>
     <div className="icon-container">
       <img src={icon} alt={label} className="menu-icon" />
     </div>
@@ -48,7 +49,14 @@ function NodeMenu() {
     >
       <MenuItem icon={copyPasteIcon} label="复制粘贴" />
       <MenuItem icon={deleteIcon} label="删除节点" />
-      <MenuItem icon={renameIcon} label="重命名" />
+      <MenuItem 
+        icon={renameIcon} 
+        label="重命名" 
+        onClick={() => {
+          hideNodeMenu(); // 隐藏节点菜单
+          showRenameModal(); // 显示重命名弹窗
+        }}
+      />
     </div>
   );
 }

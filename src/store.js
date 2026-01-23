@@ -23,9 +23,9 @@ export const useStore = create(
     viewport: { x: 0, y: 0, zoom: 1 },
 
     // ========== 悬浮组件 ==========
-    nodeMenu: { visible: false,  nodeId: null },
-    nodePanel: { visible: false,  nodeId: null },
-    renameModal: { visible: false, nodeIds: [] },
+    nodeMenu: { visible: false, nodeId: null },
+    nodePanel: { visible: false, nodeId: null },
+    renameModal: { visible: false, nodeIds: [], placeholder: "", value: "" },
 
     // ========== 历史记录 ==========
     history: [],
