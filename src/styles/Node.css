@@ -55,3 +55,19 @@
   font-weight: bold;
   text-align: center;
 }
+/**
+ * 选中节点的样式
+ * 使用发光效果和边框来标识选中状态
+ */
+.react-flow__node.selected .container {
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.9),
+    0 0 15px 5px var(--node-color, rgb(137, 146, 235));
+}
+
+/**
+ * 未选中节点的默认过渡
+ */
+.react-flow__node .container {
+  transition: 0.2s ease;
+}

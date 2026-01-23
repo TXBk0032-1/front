@@ -10,8 +10,7 @@
 import { Handle, Position, useEdges, useReactFlow } from '@xyflow/react';
 import { Button } from '@heroui/react';
 import { selectNode } from '../utils/blueprint/selectNode';
-import { showNodePanel, bindNodePanelToNode } from '../utils/blueprint/nodePanel';
-import { showNodeMenu, bindNodeMenuToNode } from '../utils/blueprint/nodeMenu';
+import { bindNodeMenuAndPanelToNode, showNodeMenuAndPanel, hideNodeMenuAndPanel } from '../utils/index';
 import '../styles/Node.css';
 
 const DRAG_THRESHOLD = 5;
@@ -74,17 +73,15 @@ const Node = ({ data, id }) => {
   const handleContextMenu = (event) => {
     event.preventDefault();
     event.stopPropagation();
-    bindNodeMenuToNode(id);
-    bindNodePanelToNode(id);
-    showNodeMenu();
-    showNodePanel();
+    bindNodeMenuAndPanelToNode(id);
+    showNodeMenuAndPanel();
     console.log('右键点击节点');
   };
 
   return (
     <Button
       className="container"
-      style={{ background: color }}
+      style={{ background: color, '--node-color': color }}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >

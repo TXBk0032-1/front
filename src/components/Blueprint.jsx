@@ -12,7 +12,7 @@ import NodePanel from './NodePanel';
 import { addNode } from '../utils/blueprint/addNode';
 import { addEdge } from '../utils/blueprint/addEdge';
 
-
+import { hideNodeMenuAndPanel } from '../utils/index';
 
 import '../styles/Blueprint.css'
 
@@ -42,6 +42,14 @@ const onDragOver = (e) => {
   e.dataTransfer.dropEffect = 'copy';
 };
 
+const onClick = (e) => {
+  hideNodeMenuAndPanel();
+}
+const onContextMenu = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
 
 function Blueprint() {
   const nodes = useStore((s) => s.nodes);
@@ -69,6 +77,8 @@ function Blueprint() {
       onViewportChange={setViewport}
       onConnect={onConnect}
       nodeTypes={nodeTypes}
+      onClick={onClick}
+      onContextMenu={onContextMenu}
       proOptions={{ hideAttribution: true }}
       {...FLOW_CONFIG}
       onDragOver={onDragOver}
