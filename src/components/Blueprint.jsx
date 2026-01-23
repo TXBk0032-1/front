@@ -7,6 +7,8 @@ import { setViewport } from '../utils/blueprint/viewport';
 
 import Node from './Node';
 import ToolBar from './ToolBar';
+import NodeMenu from './NodeMenu';
+import NodePanel from './NodePanel';
 import { addNode } from '../utils/blueprint/addNode';
 import { addEdge } from '../utils/blueprint/addEdge';
 
@@ -71,6 +73,8 @@ function Blueprint() {
       onDrop={onDrop}
     >
       <ToolBar />
+      <NodeMenu />
+      <NodePanel />
       <Background />
 
     </ReactFlow>
