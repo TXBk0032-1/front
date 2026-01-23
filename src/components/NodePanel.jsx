@@ -10,6 +10,7 @@
 import { useStore } from '../store';
 import { Input, Switch } from '@heroui/react';
 import { calcPositionAroundNode } from '../utils/data/position';
+import { updateNodeParam } from '../utils/blueprint/updateNodeParam';
 
 import { useReactFlow } from '@xyflow/react';
 
@@ -78,49 +79,12 @@ export function NodePanel() {
   const scale = viewport.zoom;
   const positionStyle = calcPositionStyle(panelPosition.x, panelPosition.y, scale);
 
-  // 下面是一些节点信息提前提取
-  console.log(targetNode);
-  /* {
-    "id": "8x4.assssuf7a369c15cecca004d",
-    "type": "baseNode",
-    "position": {
-        "x": 222.5795440673828,
-        "y": 143.9808235168457
-    },
-    "data": {
-        "label": "全连接层",
-        "opcode": "linear",
-        "inputs": [
-            {
-                "id": "x",
-                "label": "x"
-            }
-        ],
-        "outputs": [
-            {
-                "id": "y",
-                "label": "y"
-            }
-        ],
-        "params": {
-            "输出特征数": {
-                "label": "输出特征数",
-                "type": "number",
-                "default": "128"
-            },
-            "bias": {
-                "label": "bias",
-                "type": "boolean",
-                "default": true
-            }
-        },
-        "color": "#82CBFA"
-    },
-    "measured": {
-        "width": 150,
-        "height": 36
-    }
-} */
+  const nodeName = targetNode.data.label || '未命名节点';
+  const params = targetNode.data.params || {};
+
+  const handleParamChange = (paramKey, paramValue) => {
+    updateNodeParam(nodeId, paramKey, paramValue);
+  };
 
   return (
     <div
@@ -129,10 +93,44 @@ export function NodePanel() {
       style={positionStyle}
     >
       <div className="panel-header">
-        <span className="panel-title">节点 属性</span>
+        <span className="panel-title">{nodeName} 属性</span>
       </div>
       <div className="panel-content">
+        {Object.entries(params).map(([paramKey, paramConfig]) => {
+          const { label, type, default: defaultValue } = paramConfig;
 
+          switch (type) {
+            case 'number':
+              return (
+                <NumberInput
+                  key={paramKey}
+                  label={label}
+                  value={defaultValue}
+                  onChange={(value) => handleParamChange(paramKey, value)}
+                />
+              );
+            case 'string':
+              return (
+                <StringInput
+                  key={paramKey}
+                  label={label}
+                  value={defaultValue}
+                  onChange={(value) => handleParamChange(paramKey, value)}
+                />
+              );
+            case 'boolean':
+              return (
+                <BooleanSwitch
+                  key={paramKey}
+                  label={label}
+                  value={defaultValue}
+                  onChange={(value) => handleParamChange(paramKey, value)}
+                />
+              );
+            default:
+              return null;
+          }
+        })}
       </div>
     </div>
   );

@@ -13,6 +13,9 @@
   min-width: 200px;
   max-width: 280px;
   overflow: hidden;
+  /* 里面的内容从来不换行 */
+  white-space: nowrap;
+  
 
   /* top: 0;
   left: 0; */
