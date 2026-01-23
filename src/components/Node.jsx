@@ -75,9 +75,7 @@ const Node = ({ data, id }) => {
     event.preventDefault();
     event.stopPropagation();
     bindNodeMenuToNode(id);
-    bindNodePanelToNode(id);
     showNodeMenu();
-    showNodePanel();
     console.log('右键点击节点');
   };
 

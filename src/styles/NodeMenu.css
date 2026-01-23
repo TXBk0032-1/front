@@ -2,11 +2,13 @@
  * NodeMenu.css - 节点右键菜单样式
  */
 
-.context-menu {
+.node-menu {
   position: fixed;
   z-index: 1000;
   border-radius: 14px;
   display: flex;
+    justify-content: center; /* 水平居中 */
+  align-items: center;     /* 垂直居中 */
   flex-direction: row;
   padding: 12px;
   gap: 12px;
@@ -21,8 +23,9 @@
   /* 动态位置样式 */
   left: var(--menu-x);
   top: var(--menu-y);
-  transform: var(--menu-transform);
-  transform-origin: var(--menu-origin);
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  scale: var(--menu-scale);
 
   /* top: 0;
   left: 0; */
@@ -30,7 +33,7 @@
 
 /* ========== 菜单项 ========== */
 
-.context-menu-item {
+.node-menu-item {
   display: flex;
   flex-direction: column;
   align-items: center;

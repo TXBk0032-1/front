@@ -1,4 +1,4 @@
-import { getState, setState } from "../../store";
+import { getState, setState} from "../../store";
 
 export function showNodeMenu() {
     const { nodeMenu } = getState();
@@ -18,29 +18,6 @@ export function hideNodeMenu() {
         nodeMenu: {
             ...nodeMenu,
             visible: false
-        }
-    });
-}
-
-export function updateNodeMenuPosition() {
-    const { nodeMenu } = getState();
-
-    if (!nodeMenu.visible) {
-        return;
-    }
-    // 根据id查找节点位置
-    const { nodes } = getState();
-    const node = nodes.find(n => n.id === nodeMenu.nodeId);
-    if (!node) {
-        return;
-    }
-    const { x, y } = node;
-
-    setState({
-        nodeMenu: {
-            ...nodeMenu,
-            x,
-            y
         }
     });
 }

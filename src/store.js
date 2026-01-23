@@ -6,35 +6,37 @@
  *
  */
 import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
 import nodeRegistry from "./constants/节点格式示例.json";
-export const useStore = create((set, get) => ({
-  // ========== 蓝图基础数据 ==========
-  blueprintName: "我的架构",
-  nodes: [],
-  edges: [],
+export const useStore = create(
+  subscribeWithSelector(() => ({
+    // ========== 蓝图基础数据 ==========
+    blueprintName: "我的架构",
+    nodes: [],
+    edges: [],
 
-  // ========== 选择状态 ==========
-  selectedIds: [],
-  selectedCategory: "all",
+    // ========== 选择状态 ==========
+    selectedIds: [],
+    selectedCategory: "all",
 
-  // ========== UI 状态 ==========
-  viewport: { x: 0, y: 0, zoom: 1 },
+    // ========== UI 状态 ==========
+    viewport: { x: 0, y: 0, zoom: 1 },
 
-  // ========== 悬浮组件 ==========
-  nodeMenu: { visible: false, x: 0, y: 0, nodeId: null },
-  nodePanel: { visible: false, x: 0, y: 0, nodeId: null },
-  renameModal: { visible: false, nodeIds: [] },
+    // ========== 悬浮组件 ==========
+    nodeMenu: { visible: false,  nodeId: null },
+    nodePanel: { visible: false,  nodeId: null },
+    renameModal: { visible: false, nodeIds: [] },
 
-  // ========== 历史记录 ==========
-  history: [],
-  historyIndex: -1,
+    // ========== 历史记录 ==========
+    history: [],
+    historyIndex: -1,
 
-  // ========== 剪贴板 ==========
-  clipboard: [],
+    // ========== 剪贴板 ==========
+    clipboard: [],
 
-  // ========== 节点定义（后端提供）==========
-  registry: nodeRegistry,
-}));
-
+    // ========== 节点定义（后端提供）==========
+    registry: nodeRegistry,
+  }))
+);
 export const getState = useStore.getState;
 export const setState = useStore.setState;
