@@ -7,7 +7,9 @@
  */
 
 
+import { useStore } from '../store';
 import { Input, Switch } from '@heroui/react';
+import {  updateNodePanelPosition } from '../utils/blueprint/nodePanel';
 
 import '../styles/NodePanel.css';
 
@@ -56,11 +58,24 @@ const BooleanSwitch = ({ label, value, onChange }) => (
   </div>
 );
 
-// ========== PropertyPanel 组件 ==========
+// ========== NodePanel 组件 ==========
 
-export function PropertyPanel() {
+export function NodePanel() {
+  const nodePanel = useStore((state) => state.nodePanel);
+
+  if (!nodePanel.visible) {
+    return null;
+  }
+  updateNodePanelPosition();
+
   return (
-    <div className="property-panel">
+    <div
+      className="node-panel"
+      style={{
+        left: nodePanel.x,
+        top: nodePanel.y
+      }}
+    >
       <div className="panel-header">
         <span className="panel-title">节点 属性</span>
       </div>
@@ -76,4 +91,4 @@ export function PropertyPanel() {
 
 
 // 默认导出两个组件
-export default PropertyPanel;
+export default NodePanel;

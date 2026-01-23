@@ -22,12 +22,19 @@ export function hideNodePanel() {
     });
 }
 
-export function updateNodePanelPosition(x, y) {
+export function updateNodePanelPosition() {
     const { nodePanel } = getState();
 
     if (!nodePanel.visible) {
         return;
     }
+    // 根据id查找节点位置
+    const { nodes } = getState();
+    const node = nodes.find(n => n.id === nodePanel.nodeId);
+    if (!node) {
+        return;
+    }
+    const { x, y } = node;
 
     setState({
         nodePanel: {

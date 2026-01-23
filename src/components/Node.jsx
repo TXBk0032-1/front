@@ -10,6 +10,8 @@
 import { Handle, Position, useEdges, useReactFlow } from '@xyflow/react';
 import { Button } from '@heroui/react';
 import { selectNode } from '../utils/blueprint/selectNode';
+import { showNodePanel, bindNodePanelToNode } from '../utils/blueprint/nodePanel';
+import { showNodeMenu, bindNodeMenuToNode } from '../utils/blueprint/nodeMenu';
 import '../styles/Node.css';
 
 const DRAG_THRESHOLD = 5;
@@ -69,12 +71,22 @@ const Node = ({ data, id }) => {
     const isCtrlPressed = event.ctrlKey || event.metaKey;
     selectNode(id, isCtrlPressed);
   };
+  const handleContextMenu = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    bindNodeMenuToNode(id);
+    bindNodePanelToNode(id);
+    showNodeMenu();
+    showNodePanel();
+    console.log('右键点击节点');
+  };
 
   return (
     <Button
       className="container"
       style={{ background: color }}
       onClick={handleClick}
+      onContextMenu={handleContextMenu}
     >
       {/* 左侧：输入端口区域 */}
       <div className="port-container">
