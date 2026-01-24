@@ -3,8 +3,8 @@ import { hideNodeMenu } from '../utils/blueprint/nodeMenu';
 import { showRenameModal } from '../utils/blueprint/renameModal';
 import { calcPositionAroundNode } from '../utils/data/position';
 import { deleteNode } from '../utils/blueprint/deleteNode';
-
-
+import { pasteNodes } from '../utils/blueprint/pasteNodes';
+import { copyNodes } from '../utils/blueprint/copyNodes';
 // 使用react flow的转换函数 flowToScreenPosition 来计算位置
 import { useReactFlow } from '@xyflow/react';
 
@@ -52,7 +52,10 @@ function NodeMenu() {
       className="node-menu"
       style={positionStyle}
     >
-      <MenuItem icon={copyPasteIcon} label="复制粘贴" />
+      <MenuItem icon={copyPasteIcon} label="复制粘贴" onClick={(e) => {
+        copyNodes(); // 复制节点
+        pasteNodes(e,flowToScreenPosition); // 粘贴节点
+      }} />
       <MenuItem icon={deleteIcon} label="删除节点" onClick={() => {
         deleteNode(); // 删除节点
       }} />

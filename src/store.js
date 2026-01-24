@@ -32,7 +32,7 @@ export const useStore = create(
     historyIndex: -1,
 
     // ========== 剪贴板 ==========
-    clipboard: [],
+    clipboard: {},
 
     // ========== 节点定义（后端提供）==========
     registry: nodeRegistry,
