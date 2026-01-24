@@ -1,283 +1,345 @@
 /**
- * ws.js - WebSocket 通信模块
+ * ws.js - WebSocket通信模块
  * 
- * 封装WebSocket连接和通信逻辑
- * 与Zustand store解耦，通过回调函数更新状态
+ * 用法说明：
+ *   import ws from './ws'
+ *   
+ *   // 连接服务器
+ *   await ws.connect()
+ *   
+ *   // 获取节点数据
+ *   await ws.getRegistry()
+ *   
+ *   // 运行蓝图
+ *   await ws.runBlueprint()
+ * 
+ * 核心职责：
+ *   WebSocket通信
+ *     从后端获取节点数据
+ *     发送蓝图数据运行
+ *     收到消息输出到控制台
  */
 
-// WebSocket 服务器地址
-const WS_SERVER_URL = 'ws://localhost:8765';
+import { getState, setState } from './store'                        // 导入状态获取和设置函数
 
-// 请求超时时间（毫秒）
-const REQUEST_TIMEOUT = 30000;
+const WS_URL = 'ws://localhost:8765'                                // WebSocket服务器地址
+const TIMEOUT = 30000                                               // 请求超时时间，30秒
 
 /**
- * WebSocket 管理器类
+ * WebSocket管理器类
+ * 
+ * 封装WebSocket连接和通信逻辑
  */
-class WebSocketManager {
+class WsManager {
   constructor() {
-    this.ws = null;
-    this.isConnected = false;
-    this.isConnecting = false;
-    this.messageId = 0;
-    this.pendingRequests = new Map();
-    this.listeners = {
-      onConnect: null,
-      onDisconnect: null,
-      onMessage: null,
-      onError: null
-    };
+    this.ws = null                                                  // WebSocket实例
+    this.connected = false                                          // 连接状态
+    this.connecting = false                                         // 正在连接标志
+    this.msgId = 0                                                  // 消息ID计数器
+    this.pending = new Map()                                        // 待处理的请求映射表
   }
 
   /**
-   * 设置事件监听器
+   * genMsgId - 生成唯一消息ID
+   * 
+   * 用法示例：
+   *   const id = this.genMsgId()                                  // 生成类似 "msg-1-1234567890"
+   * 
+   * @returns {string} - 消息ID
    */
-  setListeners(listeners) {
-    this.listeners = { ...this.listeners, ...listeners };
+  genMsgId() {
+    this.msgId += 1                                                 // 消息计数器加1
+    return `msg-${this.msgId}-${Date.now()}`                       // 返回 "msg-计数-时间戳" 格式
   }
 
   /**
-   * 生成消息ID
-   */
-  generateMessageId() {
-    this.messageId += 1;
-    return `msg-${this.messageId}-${Date.now()}`;
-  }
-
-  /**
-   * 处理收到的消息
-   */
-  handleMessage(data) {
-    console.log('📥 收到消息:', data.type, data);
-
-    // 处理注册表响应
-    if (data.type === 'registry') {
-      const requestId = data.id;
-      const pending = this.pendingRequests.get(requestId);
-      if (pending) {
-        pending.resolve(data.data);
-        this.pendingRequests.delete(requestId);
-      }
-    }
-    // 处理节点执行结果
-    else if (data.type === 'node_result') {
-      const nodeId = data.data.nodeId;
-      const output = data.data.output;
-      console.log(`📦 节点执行完成: ${nodeId}`);
-      if (output) {
-        for (const [port, val] of Object.entries(output)) {
-          if (typeof val === 'object' && val?.type === 'tensor') {
-            console.log(`   ${port}: shape=${JSON.stringify(val.shape)}`);
-          } else {
-            console.log(`   ${port}:`, val);
-          }
-        }
-      }
-    }
-    // 处理执行完成
-    else if (data.type === 'execution_complete') {
-      const requestId = data.id;
-      console.log('✅ 蓝图执行完成！');
-      console.log(`   成功: ${data.data.success}`);
-      const pending = this.pendingRequests.get(requestId);
-      if (pending) {
-        pending.resolve(data.data);
-        this.pendingRequests.delete(requestId);
-      }
-    }
-    // 处理错误
-    else if (data.type === 'error') {
-      const requestId = data.id;
-      console.error('❌ 执行出错:', data.data.message);
-      const pending = this.pendingRequests.get(requestId);
-      if (pending) {
-        pending.reject(new Error(data.data.message));
-        this.pendingRequests.delete(requestId);
-      }
-    }
-
-    // 调用消息回调
-    this.listeners.onMessage?.(data);
-  }
-
-  /**
-   * 连接 WebSocket
+   * connect - 连接WebSocket服务器
+   * 
+   * 用法示例：
+   *   await ws.connect()                                          // 连接服务器
+   * 
+   * @returns {Promise} - 连接成功返回resolve，失败返回reject
    */
   connect() {
-    return new Promise((resolve, reject) => {
-      // 如果已经连接，直接返回
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        resolve();
-        return;
+    return new Promise((resolve, reject) => {                       // 返回Promise，支持await
+
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {       // 如果已经连接
+        resolve()                                                  // 直接返回成功
+        return
       }
 
-      // 如果正在连接中
-      if (this.isConnecting) {
-        reject(new Error('正在连接中，请稍候'));
-        return;
+      if (this.connecting) {                                        // 如果正在连接中
+        reject(new Error('正在连接中，请稍候'))                     // 返回错误
+        return
       }
 
-      this.isConnecting = true;
-      console.log('🔌 正在连接 WebSocket 服务器...');
+      this.connecting = true                                        // 设置正在连接标志
+      console.log('🔌 正在连接WebSocket服务器...')                  // 输出连接提示
 
-      try {
-        const ws = new WebSocket(WS_SERVER_URL);
+      const socket = new WebSocket(WS_URL)                          // 创建WebSocket实例
 
-        ws.onopen = () => {
-          console.log('✅ WebSocket 连接成功');
-          this.isConnected = true;
-          this.isConnecting = false;
-          this.ws = ws;
-          this.listeners.onConnect?.();
-          resolve();
-        };
-
-        ws.onerror = (error) => {
-          console.error('❌ WebSocket 连接错误:', error);
-          this.isConnecting = false;
-          this.isConnected = false;
-          this.listeners.onError?.(error);
-          reject(new Error('WebSocket 连接失败，请确保后端服务器已启动'));
-        };
-
-        ws.onclose = () => {
-          console.log('🔌 WebSocket 连接已关闭');
-          this.isConnected = false;
-          this.isConnecting = false;
-          this.ws = null;
-          this.listeners.onDisconnect?.();
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            this.handleMessage(data);
-          } catch (error) {
-            console.error('解析消息失败:', error);
-          }
-        };
-      } catch (error) {
-        this.isConnecting = false;
-        reject(error);
+      socket.onopen = () => {                                       // 连接成功回调
+        console.log('✅ WebSocket连接成功')                        // 输出成功提示
+        this.ws = socket                                           // 保存socket实例
+        this.connected = true                                      // 设置连接状态
+        this.connecting = false                                    // 清除正在连接标志
+        resolve()                                                  // 返回成功
       }
-    });
+
+      socket.onerror = (err) => {                                   // 连接错误回调
+        console.error('❌ WebSocket连接错误:', err)                // 输出错误信息
+        this.connecting = false                                    // 清除正在连接标志
+        this.connected = false                                     // 设置未连接状态
+        reject(new Error('WebSocket连接失败，请确保后端已启动'))    // 返回错误
+      }
+
+      socket.onclose = () => {                                      // 连接关闭回调
+        console.log('🔌 WebSocket连接已关闭')                      // 输出关闭提示
+        this.ws = null                                             // 清除socket实例
+        this.connected = false                                     // 设置未连接状态
+        this.connecting = false                                    // 清除正在连接标志
+      }
+
+      socket.onmessage = (event) => {                               // 收到消息回调
+        try {
+          const data = JSON.parse(event.data)                      // 解析JSON数据
+          this.handleMsg(data)                                     // 处理消息
+        } catch (e) {
+          console.error('解析消息失败:', e)                        // 输出解析错误
+        }
+      }
+    })
   }
 
   /**
-   * 发送消息
+   * handleMsg - 处理收到的消息
+   * 
+   * 用法示例：
+   *   this.handleMsg(data)                                        // 内部调用，处理服务器消息
+   * 
+   * @param {Object} data - 服务器发来的消息对象
    */
-  async sendMessage(message) {
-    // 确保已连接
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      await this.connect();
+  handleMsg(data) {
+    console.log('📥 收到消息:', data.type, data)                    // 输出收到的消息
+
+    if (data.type === 'registry') {                                 // 如果是节点注册表响应
+      const pending = this.pending.get(data.id)                    // 获取对应的待处理请求
+      if (pending) {                                               // 如果存在
+        pending.resolve(data.data)                                 // 返回数据
+        this.pending.delete(data.id)                               // 删除待处理请求
+      }
+      return
     }
 
-    return new Promise((resolve, reject) => {
-      const messageId = message.id || this.generateMessageId();
-      const fullMessage = { ...message, id: messageId };
+    if (data.type === 'node_result') {                              // 如果是节点执行结果
+      const { nodeId, output } = data.data                         // 解构节点ID和输出
+      console.log(`📦 节点执行完成: ${nodeId}`)                    // 输出节点执行信息
+      if (output) {                                                // 如果有输出
+        Object.entries(output).forEach(([port, val]) => {          // 遍历输出端口
+          if (val?.type === 'tensor') {                            // 如果是张量类型
+            console.log(`   ${port}: shape=${JSON.stringify(val.shape)}`)
+          } else {
+            console.log(`   ${port}:`, val)                        // 输出其他类型的值
+          }
+        })
+      }
+      return
+    }
 
-      // 设置超时
-      const timeout = setTimeout(() => {
-        if (this.pendingRequests.has(messageId)) {
-          this.pendingRequests.delete(messageId);
-          reject(new Error('请求超时'));
-        }
-      }, REQUEST_TIMEOUT);
+    if (data.type === 'execution_complete') {                       // 如果是执行完成
+      console.log('✅ 蓝图执行完成！')                             // 输出完成提示
+      console.log(`   成功: ${data.data.success}`)                 // 输出执行结果
+      const pending = this.pending.get(data.id)                    // 获取对应的待处理请求
+      if (pending) {                                               // 如果存在
+        pending.resolve(data.data)                                 // 返回数据
+        this.pending.delete(data.id)                               // 删除待处理请求
+      }
+      return
+    }
 
-      // 存储待处理请求
-      this.pendingRequests.set(messageId, {
-        resolve: (data) => {
-          clearTimeout(timeout);
-          resolve(data);
-        },
-        reject: (error) => {
-          clearTimeout(timeout);
-          reject(error);
-        }
-      });
-
-      console.log('📤 发送消息:', fullMessage);
-      this.ws.send(JSON.stringify(fullMessage));
-    });
+    if (data.type === 'error') {                                    // 如果是错误消息
+      console.error('❌ 执行出错:', data.data.message)             // 输出错误信息
+      const pending = this.pending.get(data.id)                    // 获取对应的待处理请求
+      if (pending) {                                               // 如果存在
+        pending.reject(new Error(data.data.message))               // 返回错误
+        this.pending.delete(data.id)                               // 删除待处理请求
+      }
+    }
   }
 
   /**
-   * 获取节点注册表
+   * send - 发送消息到服务器
+   * 
+   * 用法示例：
+   *   const result = await ws.send({ type: 'get_registry' })
+   * 
+   * @param {Object} msg - 要发送的消息对象
+   * @returns {Promise} - 返回服务器响应
+   */
+  async send(msg) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {        // 如果未连接
+      await this.connect()                                         // 先连接
+    }
+
+    return new Promise((resolve, reject) => {                       // 返回Promise
+
+      const msgId = msg.id || this.genMsgId()                      // 获取或生成消息ID
+      const fullMsg = { ...msg, id: msgId }                        // 组装完整消息
+
+      const timer = setTimeout(() => {                             // 设置超时定时器
+        if (this.pending.has(msgId)) {                             // 如果请求还在等待
+          this.pending.delete(msgId)                               // 删除待处理请求
+          reject(new Error('请求超时'))                            // 返回超时错误
+        }
+      }, TIMEOUT)
+
+      this.pending.set(msgId, {                                    // 存储待处理请求
+        resolve: (data) => {                                       // 成功回调
+          clearTimeout(timer)                                      // 清除超时定时器
+          resolve(data)                                            // 返回数据
+        },
+        reject: (err) => {                                         // 失败回调
+          clearTimeout(timer)                                      // 清除超时定时器
+          reject(err)                                              // 返回错误
+        }
+      })
+
+      console.log('📤 发送消息:', fullMsg)                         // 输出发送的消息
+      this.ws.send(JSON.stringify(fullMsg))                        // 发送JSON字符串
+    })
+  }
+
+  /**
+   * getRegistry - 从后端获取节点数据
+   * 
+   * 用法示例：
+   *   await ws.getRegistry()                                      // 获取节点注册表并更新store
+   * 
+   * @returns {Promise} - 返回节点注册表数据
    */
   async getRegistry() {
-    console.log('\n' + '='.repeat(50));
-    console.log('     获取节点注册表');
-    console.log('='.repeat(50));
+    console.log('\n' + '='.repeat(50))                              // 输出分隔线
+    console.log('     获取节点注册表')                              // 输出标题
+    console.log('='.repeat(50))                                     // 输出分隔线
 
     try {
-      const result = await this.sendMessage({
-        type: 'get_registry'
-      });
+      const result = await this.send({ type: 'get_registry' })     // 发送获取注册表请求
 
-      console.log('📥 收到注册表数据:');
-      console.log(`   分类数量: ${Object.keys(result.categories || {}).length}`);
-      console.log(`   节点数量: ${Object.keys(result.nodes || {}).length}`);
-      console.log(`   节点列表: ${Object.keys(result.nodes || {}).join(', ')}`);
-      console.log('='.repeat(50) + '\n');
+      console.log('📥 收到注册表数据:')                            // 输出接收提示
+      const categories = result.categories || {}                   // 获取分类数据
+      const nodes = result.nodes || {}                             // 获取节点数据
+      console.log(`   分类数量: ${Object.keys(categories).length}`)// 输出分类数量
+      console.log(`   节点数量: ${Object.keys(nodes).length}`)     // 输出节点数量
+      console.log('='.repeat(50) + '\n')                           // 输出分隔线
 
-      return result;
-    } catch (error) {
-      console.error('获取注册表失败:', error.message);
-      throw error;
+      const nodeList = this.transformRegistry(result)              // 转换注册表格式
+      setState({ registry: nodeList })                             // 更新store中的注册表
+
+      return result                                                // 返回原始数据
+    } catch (err) {
+      console.error('获取注册表失败:', err.message)                // 输出错误信息
+      throw err                                                    // 抛出错误
     }
   }
 
   /**
-   * 运行蓝图
+   * transformRegistry - 转换注册表格式为节点数组
+   * 
+   * 用法示例：
+   *   const nodeList = this.transformRegistry(registryData)
+   * 
+   * @param {Object} data - 后端返回的注册表数据
+   * @returns {Array} - 节点定义数组
+   */
+  transformRegistry(data) {
+    if (!data || !data.nodes) return []                             // 如果数据无效，返回空数组
+
+    const nodeList = []                                             // 初始化节点列表
+
+    Object.entries(data.nodes).forEach(([opcode, nodeDef]) => {    // 遍历所有节点定义
+      nodeList.push({                                              // 添加节点到列表
+        opcode: opcode,                                            // 节点操作码
+        name: nodeDef.name || opcode,                              // 节点名称
+        category: nodeDef.category || 'default',                   // 节点分类
+        inputs: nodeDef.inputs || [],                              // 输入端口
+        outputs: nodeDef.outputs || [],                            // 输出端口
+        params: nodeDef.params || []                               // 节点参数
+      })
+    })
+
+    return nodeList                                                 // 返回节点列表
+  }
+
+  /**
+   * runBlueprint - 发送蓝图数据运行
+   * 
+   * 用法示例：
+   *   await ws.runBlueprint()                                     // 运行当前蓝图
+   *   await ws.runBlueprint(customBlueprint)                      // 运行指定蓝图
+   *   await ws.runBlueprint(blueprint, { input: data })           // 带输入数据运行
+   * 
+   * @param {Object} blueprint - 蓝图数据，可选，默认使用store中的数据
+   * @param {Object} inputs - 输入数据，可选
+   * @returns {Promise} - 返回执行结果
    */
   async runBlueprint(blueprint, inputs = {}) {
-    console.log('\n' + '='.repeat(50));
-    console.log('     运行蓝图');
-    console.log('='.repeat(50));
-    console.log(`   节点数量: ${blueprint.nodes?.length || 0}`);
-    console.log(`   连线数量: ${blueprint.edges?.length || 0}`);
+    console.log('\n' + '='.repeat(50))                              // 输出分隔线
+    console.log('     运行蓝图')                                    // 输出标题
+    console.log('='.repeat(50))                                     // 输出分隔线
+
+    const bp = blueprint || {                                       // 使用传入的蓝图或从store获取
+      nodes: getState().nodes,                                     // 获取节点数据
+      edges: getState().edges                                      // 获取连接线数据
+    }
+
+    console.log(`   节点数量: ${bp.nodes?.length || 0}`)           // 输出节点数量
+    console.log(`   连线数量: ${bp.edges?.length || 0}`)           // 输出连线数量
 
     try {
-      const result = await this.sendMessage({
-        type: 'run_blueprint',
-        data: {
-          blueprint: blueprint,
-          inputs: inputs
+      const result = await this.send({                             // 发送运行蓝图请求
+        type: 'run_blueprint',                                     // 消息类型
+        data: {                                                    // 消息数据
+          blueprint: bp,                                           // 蓝图数据
+          inputs: inputs                                           // 输入数据
         }
-      });
+      })
 
-      console.log('='.repeat(50) + '\n');
-      return result;
-    } catch (error) {
-      console.error('运行蓝图失败:', error.message);
-      throw error;
+      console.log('='.repeat(50) + '\n')                           // 输出分隔线
+      return result                                                // 返回执行结果
+    } catch (err) {
+      console.error('运行蓝图失败:', err.message)                  // 输出错误信息
+      throw err                                                    // 抛出错误
     }
   }
 
   /**
-   * 断开连接
+   * disconnect - 断开连接
+   * 
+   * 用法示例：
+   *   ws.disconnect()                                             // 断开WebSocket连接
    */
   disconnect() {
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
+    if (this.ws) {                                                  // 如果有连接
+      this.ws.close()                                              // 关闭连接
+      this.ws = null                                               // 清除实例
     }
-    this.isConnected = false;
-    this.pendingRequests.clear();
+    this.connected = false                                          // 设置未连接状态
+    this.pending.clear()                                            // 清空待处理请求
   }
 
   /**
-   * 获取连接状态
+   * isConnected - 获取连接状态
+   * 
+   * 用法示例：
+   *   if (ws.isConnected()) { ... }                               // 检查是否已连接
+   * 
+   * @returns {boolean} - 是否已连接
    */
-  getStatus() {
-    return {
-      isConnected: this.isConnected,
-      isConnecting: this.isConnecting
-    };
+  isConnected() {
+    return this.connected                                           // 返回连接状态
   }
 }
 
-// 创建单例实例
-const wsManager = new WebSocketManager();
+const ws = new WsManager()                                          // 创建WebSocket管理器单例
 
-export default wsManager;
+export default ws                                                   // 默认导出管理器实例
