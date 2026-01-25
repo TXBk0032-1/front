@@ -1,0 +1,106 @@
+{
+    "categories": {
+        "basic": {
+            "id": "basic",
+            "label": "基础",
+            "color": "#8B92E5",
+            "icon": "base64",
+            "nodes": [
+                "input",
+                "output",
+                "constant",
+                "debug"
+            ]
+        },
+        "example_category": {
+            "id": "example_category",
+            "label": "示例节点定义",
+            "color": "#FFB6C1",
+            "icon": "",
+            "nodes": [
+                "example_node"
+            ]
+        }
+    },
+    "nodes": {
+        "input": {
+            "opcode": "input",
+            "label": "输入",
+            "category": "basic",
+            "ports": {
+                "in": [],
+                "out": [
+                    "out"
+                ]
+            },
+            "params": {
+                "输出维度": [
+                    1,
+                    10
+                ]
+            }
+        },
+        "output": {
+            "opcode": "output",
+            "label": "输出",
+            "category": "basic",
+            "ports": {
+                "in": [
+                    "in"
+                ],
+                "out": [
+                    "out"
+                ]
+            },
+            "params": {}
+        },
+        "constant": {
+            "opcode": "constant",
+            "label": "常量",
+            "category": "basic",
+            "ports": {
+                "in": [],
+                "out": [
+                    "out"
+                ]
+            },
+            "params": {
+                "value": 0
+            }
+        },
+        "debug": {
+            "opcode": "debug",
+            "label": "调试输出",
+            "category": "basic",
+            "ports": {
+                "in": [
+                    "x"
+                ],
+                "out": [
+                    "out"
+                ]
+            },
+            "params": {
+                "label": "debug"
+            }
+        },
+        "example_node": {
+            "opcode": "example_node",
+            "label": "示例节点",
+            "category": "example_category",
+            "ports": {
+                "in": [
+                    "x",
+                    "y"
+                ],
+                "out": [
+                    "result"
+                ]
+            },
+            "params": {
+                "数字参数": 1,
+                "布尔参数": false
+            }
+        }
+    }
+}

@@ -94,64 +94,23 @@ function CategoryBar() {
 /**
  * getCategoriesFromRegistry - 从注册表提取分类信息
  * 
- * @param {Array} registry - 节点注册表数组
- * @returns {Array} - 分类信息数组
+ * 后端返回结构: { categories: { id: { id, label, color, icon } }, nodes: { opcode: {...} } }
+ * 
+ * @param {Object} registry - 节点注册表对象
+ * @returns {Array} - 分类信息数组 [{ key, label, color }, ...]
  */
 function getCategoriesFromRegistry(registry) {
-  if (!registry || !Array.isArray(registry)) return []              // 如果注册表无效，返回空数组
+  if (!registry || !registry.categories) return []                  // 如果注册表无效，返回空数组
 
-  const categoryMap = new Map()                                     // 用Map存储分类信息，去重
+  const categories = registry.categories                            // 获取分类对象
 
-  registry.forEach(node => {                                        // 遍历所有节点
-    const cat = node.category || 'default'                         // 获取节点分类，默认'default'
-    if (!categoryMap.has(cat)) {                                   // 如果分类不存在
-      categoryMap.set(cat, {                                       // 添加分类信息
-        key: cat,                                                  // 分类键名
-        label: getCategoryLabel(cat),                              // 分类显示名称
-        color: getCategoryColor(cat)                               // 分类颜色
-      })
-    }
-  })
+  if (typeof categories !== 'object') return []                     // 如果不是对象，返回空数组
 
-  return Array.from(categoryMap.values())                           // 返回分类数组
-}
-
-/**
- * getCategoryLabel - 获取分类显示名称
- * 
- * @param {string} category - 分类键名
- * @returns {string} - 分类显示名称
- */
-function getCategoryLabel(category) {
-  const labels = {                                                  // 分类名称映射表
-    'default': '默认',
-    'neural': '神经网络',
-    'math': '数学运算',
-    'basic': '基础',
-    'function': '函数',
-    'io': '输入输出',
-    'data': '数据处理'
-  }
-  return labels[category] || category                               // 返回名称，未知分类返回键名
-}
-
-/**
- * getCategoryColor - 获取分类颜色
- * 
- * @param {string} category - 分类键名
- * @returns {string} - 分类颜色
- */
-function getCategoryColor(category) {
-  const colors = {                                                  // 分类颜色映射表
-    'default': '#666666',
-    'neural': '#ff6b6b',
-    'math': '#4ecdc4',
-    'basic': '#45b7d1',
-    'function': '#96ceb4',
-    'io': '#ffeaa7',
-    'data': '#dfe6e9'
-  }
-  return colors[category] || '#666666'                              // 返回颜色，未知分类返回默认灰色
+  return Object.entries(categories).map(([key, cat]) => ({          // 遍历分类对象，转换格式
+    key: key,                                                       // 分类键名
+    label: cat.label || key,                                        // 分类显示名称
+    color: cat.color || '#666666'                                   // 分类颜色
+  }))
 }
 
 /**
@@ -183,7 +142,7 @@ function NodeItem({ node, color }) {
       draggable                                                     /* 允许拖拽 */
       onDragStart={handleDragStart}                                 /* 绑定拖拽开始事件 */
     >
-      {node.name || node.opcode}                                    {/* 显示节点名称或opcode */}
+      {node.label || node.opcode}                                   {/* 显示节点标签或opcode */}
     </div>
   )
 }
@@ -254,35 +213,67 @@ function NodeList() {
 /**
  * getGroupedNodes - 按分类分组节点
  * 
- * @param {Array} registry - 节点注册表数组
+ * 后端返回结构: { categories: { id: { id, label, color } }, nodes: { opcode: { opcode, label, category, ... } } }
+ * 节点通过自身的 category 字段关联到分类的 id
+ * 
+ * @param {Object} registry - 节点注册表对象
  * @param {string} selectedCategory - 选中的分类
- * @returns {Array} - 分组后的节点数组
+ * @returns {Array} - 分组后的节点数组 [{ category, label, color, nodes }, ...]
  */
 function getGroupedNodes(registry, selectedCategory) {
-  if (!registry || !Array.isArray(registry)) return []              // 如果注册表无效，返回空数组
+  if (!registry || !registry.categories || !registry.nodes) return [] // 如果注册表无效，返回空数组
 
-  const groups = new Map()                                          // 用Map存储分组信息
+  const categories = registry.categories                            // 获取分类对象
+  const nodes = registry.nodes                                      // 获取节点对象
 
-  registry.forEach(node => {                                        // 遍历所有节点
-    const cat = node.category || 'default'                         // 获取节点分类
+  if (typeof categories !== 'object' || typeof nodes !== 'object') return [] // 如果不是对象，返回空数组
 
-    if (selectedCategory !== 'all' && selectedCategory !== cat) {  // 如果不是选中的分类
-      return                                                       // 跳过该节点
-    }
+  const categoryMap = new Map()                                     // 用Map存储分类信息，方便查找
 
-    if (!groups.has(cat)) {                                        // 如果分组不存在
-      groups.set(cat, {                                            // 创建分组
-        category: cat,                                             // 分类键名
-        label: getCategoryLabel(cat),                              // 分类名称
-        color: getCategoryColor(cat),                              // 分类颜色
-        nodes: []                                                  // 节点数组
-      })
-    }
-
-    groups.get(cat).nodes.push(node)                               // 将节点添加到分组
+  Object.entries(categories).forEach(([catId, catData]) => {        // 遍历分类对象
+    categoryMap.set(catId, {                                        // 以id为键存储分类信息
+      id: catId,                                                    // 分类id
+      label: catData.label || catId,                                // 分类名称
+      color: catData.color || '#666666',                            // 分类颜色
+      nodes: []                                                     // 该分类的节点数组（待填充）
+    })
   })
 
-  return Array.from(groups.values())                                // 返回分组数组
+  categoryMap.set('', {                                             // 添加默认分类（空字符串）
+    id: '',                                                         // 分类id
+    label: '未分类',                                                // 分类名称
+    color: '#666666',                                               // 分类颜色
+    nodes: []                                                       // 该分类的节点数组
+  })
+
+  Object.values(nodes).forEach(node => {                            // 遍历所有节点
+    const catId = node.category || ''                               // 获取节点的分类id，默认空字符串
+    const cat = categoryMap.get(catId)                              // 查找对应的分类
+    if (cat) {                                                      // 如果分类存在
+      cat.nodes.push(node)                                          // 将节点添加到该分类
+    } else {                                                        // 如果分类不存在
+      categoryMap.get('').nodes.push(node)                          // 添加到未分类
+    }
+  })
+
+  const groups = []                                                 // 存储分组结果
+
+  categoryMap.forEach((catData, catId) => {                         // 遍历所有分类
+    if (selectedCategory !== 'all' && selectedCategory !== catId) { // 如果不是选中的分类
+      return                                                        // 跳过该分类
+    }
+
+    if (catData.nodes.length > 0) {                                 // 如果有节点
+      groups.push({                                                 // 添加分组
+        category: catId,                                            // 分类id
+        label: catData.label,                                       // 分类名称
+        color: catData.color,                                       // 分类颜色
+        nodes: catData.nodes                                        // 节点数组
+      })
+    }
+  })
+
+  return groups                                                     // 返回分组数组
 }
 
 /**

@@ -54,7 +54,7 @@ export const useStore = create(                               // 创建全局状
     clipboard: { nodes: [], edges: [] },                      // 剪贴板数据，存储复制的节点和连接线
 
     // ========== 节点注册表（后端提供）==========
-    registry: []                                              // 节点定义注册表，从后端获取所有可用节点类型
+    registry: { categories: {}, nodes: {} }                         // 节点定义注册表，从后端获取所有可用节点类型
   }))
 )
 

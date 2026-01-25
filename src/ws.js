@@ -122,7 +122,7 @@ class WsManager {
   handleMsg(data) {
     console.log('📥 收到消息:', data.type, data)                    // 输出收到的消息
 
-    if (data.type === 'registry') {                                 // 如果是节点注册表响应
+    if (data.type === 'getRegistry') {                                 // 如果是节点注册表响应
       const pending = this.pending.get(data.id)                    // 获取对应的待处理请求
       if (pending) {                                               // 如果存在
         pending.resolve(data.data)                                 // 返回数据
@@ -131,7 +131,7 @@ class WsManager {
       return
     }
 
-    if (data.type === 'node_result') {                              // 如果是节点执行结果
+    if (data.type === 'nodeResult') {                              // 如果是节点执行结果
       const { nodeId, output } = data.data                         // 解构节点ID和输出
       console.log(`📦 节点执行完成: ${nodeId}`)                    // 输出节点执行信息
       if (output) {                                                // 如果有输出
@@ -146,7 +146,7 @@ class WsManager {
       return
     }
 
-    if (data.type === 'execution_complete') {                       // 如果是执行完成
+    if (data.type === 'blueprintComplete') {                       // 如果是执行完成
       console.log('✅ 蓝图执行完成！')                             // 输出完成提示
       console.log(`   成功: ${data.data.success}`)                 // 输出执行结果
       const pending = this.pending.get(data.id)                    // 获取对应的待处理请求
@@ -157,7 +157,7 @@ class WsManager {
       return
     }
 
-    if (data.type === 'error') {                                    // 如果是错误消息
+    if (data.type === 'nodeError') {                                    // 如果是错误消息
       console.error('❌ 执行出错:', data.data.message)             // 输出错误信息
       const pending = this.pending.get(data.id)                    // 获取对应的待处理请求
       if (pending) {                                               // 如果存在
@@ -223,7 +223,7 @@ class WsManager {
     console.log('='.repeat(50))                                     // 输出分隔线
 
     try {
-      const result = await this.send({ type: 'get_registry' })     // 发送获取注册表请求
+      const result = await this.send({ type: 'getRegistry' })     // 发送获取注册表请求
 
       console.log('📥 收到注册表数据:')                            // 输出接收提示
       const categories = result.categories || {}                   // 获取分类数据
@@ -232,42 +232,13 @@ class WsManager {
       console.log(`   节点数量: ${Object.keys(nodes).length}`)     // 输出节点数量
       console.log('='.repeat(50) + '\n')                           // 输出分隔线
 
-      const nodeList = this.transformRegistry(result)              // 转换注册表格式
-      setState({ registry: nodeList })                             // 更新store中的注册表
+      setState({ registry: result })                             // 更新store中的注册表
 
       return result                                                // 返回原始数据
     } catch (err) {
       console.error('获取注册表失败:', err.message)                // 输出错误信息
       throw err                                                    // 抛出错误
     }
-  }
-
-  /**
-   * transformRegistry - 转换注册表格式为节点数组
-   * 
-   * 用法示例：
-   *   const nodeList = this.transformRegistry(registryData)
-   * 
-   * @param {Object} data - 后端返回的注册表数据
-   * @returns {Array} - 节点定义数组
-   */
-  transformRegistry(data) {
-    if (!data || !data.nodes) return []                             // 如果数据无效，返回空数组
-
-    const nodeList = []                                             // 初始化节点列表
-
-    Object.entries(data.nodes).forEach(([opcode, nodeDef]) => {    // 遍历所有节点定义
-      nodeList.push({                                              // 添加节点到列表
-        opcode: opcode,                                            // 节点操作码
-        name: nodeDef.name || opcode,                              // 节点名称
-        category: nodeDef.category || 'default',                   // 节点分类
-        inputs: nodeDef.inputs || [],                              // 输入端口
-        outputs: nodeDef.outputs || [],                            // 输出端口
-        params: nodeDef.params || []                               // 节点参数
-      })
-    })
-
-    return nodeList                                                 // 返回节点列表
   }
 
   /**
