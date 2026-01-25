@@ -125,7 +125,7 @@ export function createNode(opcodeOrConfig, options = {}) {
     return null                                                    // 返回null
   }
 
-  const nodeDef = registry.find(n => n.opcode === opcode)           // 从注册表中查找节点定义
+  const nodeDef = registry?.nodes?.[opcode]                         // 从注册表的nodes对象中获取节点定义，registry.nodes是一个对象，key是opcode
 
   if (!nodeDef) {                                                   // 如果找不到节点定义
     console.error('createNode: 未找到节点定义', opcode)             // 输出错误
@@ -136,20 +136,25 @@ export function createNode(opcodeOrConfig, options = {}) {
 
   const defaultParams = {}                                          // 初始化默认参数对象
   if (nodeDef.params) {                                             // 如果节点定义中有参数
-    nodeDef.params.forEach(p => {                                  // 遍历每个参数定义
-      defaultParams[p.name] = p.default ?? null                    // 设置默认值
+    Object.keys(nodeDef.params).forEach(key => {                   // 遍历params对象的每个key，registry中params是对象格式 { "参数名": 默认值 }
+      defaultParams[key] = nodeDef.params[key]                     // 复制默认值，key是参数名，value是默认值
     })
   }
 
-  const newNode = {                                                 // 创建新节点对象
-    id: nodeId,                                                    // 节点ID
-    opcode: opcode,                                                // 节点类型
-    name: name || nodeDef.name || opcode,                          // 节点显示名称
-    x: x,                                                          // X坐标
-    y: y,                                                          // Y坐标
-    params: { ...defaultParams, ...params },                       // 合并默认参数和传入参数
-    inputs: nodeDef.inputs || [],                                  // 输入端口定义
-    outputs: nodeDef.outputs || []                                 // 输出端口定义
+  const categoryDef = registry?.categories?.[nodeDef.category]      // 从registry.categories获取分类定义，用于获取分类颜色
+
+  const newNode = {                                                 // 创建新节点对象，格式需要兼容ReactFlow
+    id: nodeId,                                                    // 节点ID，ReactFlow必需
+    type: 'baseNode',                                              // 节点类型，对应nodeTypes中注册的类型名
+    position: { x: x, y: y },                                      // 节点位置，ReactFlow要求是position对象格式
+    data: {                                                        // 节点数据，ReactFlow会把data传给Node组件
+      opcode: opcode,                                              // 节点opcode，用于标识节点类型
+      name: name || nodeDef.label || opcode,                       // 节点显示名称，registry中用label字段
+      params: { ...defaultParams, ...params },                     // 合并默认参数和传入参数
+      ports: nodeDef.ports || { in: [], out: [] },                 // 端口定义，registry中格式是 { in: [], out: [] }
+      category: nodeDef.category,                                  // 节点分类
+      color: categoryDef?.color || '#8B92E5'                       // 节点颜色，从分类定义中获取
+    }
   }
 
   setState({ nodes: [...nodes, newNode] })                          // 将新节点添加到节点列表
@@ -178,9 +183,9 @@ export function deleteNode(nodeIdOrIds) {
   const newNodes = nodes.filter(n => !idSet.has(n.id))              // 过滤掉要删除的节点
 
   const newEdges = edges.filter(e => {                              // 过滤掉与被删除节点相关的连接线
-    const fromId = e.from?.nodeId || e.fromNodeId                  // 获取连接线起始节点ID
-    const toId = e.to?.nodeId || e.toNodeId                        // 获取连接线目标节点ID
-    return !idSet.has(fromId) && !idSet.has(toId)                  // 只保留两端都不在删除列表中的连接线
+    const sourceId = e.source                                      // ReactFlow边的起始节点ID是source字段
+    const targetId = e.target                                      // ReactFlow边的目标节点ID是target字段
+    return !idSet.has(sourceId) && !idSet.has(targetId)            // 只保留两端都不在删除列表中的连接线
   })
 
   const newSelectedIds = selectedIds.filter(id => !idSet.has(id))   // 从选中列表中移除被删除的节点
@@ -227,7 +232,10 @@ export function renameNode(nodeIdOrIds, newName) {
 
   const newNodes = nodes.map(node => {                              // 遍历所有节点
     if (!idSet.has(node.id)) return node                           // 如果不在重命名列表中，保持原样
-    return { ...node, name: newName }                              // 更新节点名称
+    return {                                                       // 更新节点data中的name，ReactFlow格式需要修改data对象
+      ...node,                                                     // 保留节点其他属性
+      data: { ...node.data, name: newName }                        // 更新data中的name字段
+    }
   })
 
   setState({ nodes: newNodes })                                     // 更新节点列表
@@ -250,7 +258,7 @@ export function updateNodeParam(nodeId, nameOrParams, value) {
   const node = nodes.find(n => n.id === nodeId)                     // 查找目标节点
   if (!node) return                                                 // 如果节点不存在，直接返回
 
-  let newParams = { ...node.params }                                // 复制当前参数
+  let newParams = { ...(node.data?.params || {}) }                  // 复制当前参数，ReactFlow格式中params在data里面
 
   if (typeof nameOrParams === 'string') {                           // 如果是单个参数更新
     newParams[nameOrParams] = value                                // 更新指定参数
@@ -260,7 +268,10 @@ export function updateNodeParam(nodeId, nameOrParams, value) {
 
   const newNodes = nodes.map(n => {                                 // 遍历所有节点
     if (n.id !== nodeId) return n                                  // 如果不是目标节点，保持原样
-    return { ...n, params: newParams }                             // 更新节点参数
+    return {                                                       // 更新节点data中的params，ReactFlow格式
+      ...n,                                                        // 保留节点其他属性
+      data: { ...n.data, params: newParams }                       // 更新data中的params字段
+    }
   })
 
   setState({ nodes: newNodes })                                     // 更新节点列表
@@ -268,11 +279,11 @@ export function updateNodeParam(nodeId, nameOrParams, value) {
 
 /**
  * moveNode - 移动节点
- * 
+ *
  * 用法示例：
  *   moveNode('node_123', 100, 200)                                // 移动到指定位置
  *   moveNode('node_123', { x: 100, y: 200 })                      // 使用对象格式
- * 
+ *
  * @param {string} nodeId - 节点ID
  * @param {number|Object} xOrPos - X坐标或位置对象
  * @param {number} y - Y坐标（当第二个参数是数字时使用）
@@ -294,7 +305,10 @@ export function moveNode(nodeId, xOrPos, y) {
 
   const newNodes = nodes.map(n => {                                 // 遍历所有节点
     if (n.id !== nodeId) return n                                  // 如果不是目标节点，保持原样
-    return { ...n, x: newX, y: newY }                              // 更新节点位置
+    return {                                                       // 更新节点position，ReactFlow格式
+      ...n,                                                        // 保留节点其他属性
+      position: { x: newX, y: newY }                               // ReactFlow要求位置是position对象格式
+    }
   })
 
   setState({ nodes: newNodes })                                     // 更新节点列表

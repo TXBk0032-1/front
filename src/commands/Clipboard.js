@@ -55,10 +55,10 @@ export function copy(nodeIdOrIds) {
 
   const nodesToCopy = nodes.filter(n => idSet.has(n.id))            // 过滤出要复制的节点
 
-  const edgesToCopy = edges.filter(e => {                           // 过滤出节点之间的连接线
-    const fromId = e.from?.nodeId                                  // 获取起始节点ID
-    const toId = e.to?.nodeId                                      // 获取目标节点ID
-    return idSet.has(fromId) && idSet.has(toId)                    // 只复制两端都在复制列表中的连接线
+  const edgesToCopy = edges.filter(e => {                           // 过滤出节点之间的连接线，使用ReactFlow格式
+    const sourceId = e.source                                      // 获取起始节点ID（source字段）
+    const targetId = e.target                                      // 获取目标节点ID（target字段）
+    return idSet.has(sourceId) && idSet.has(targetId)              // 只复制两端都在复制列表中的连接线
   })
 
   setState({                                                        // 更新剪贴板
@@ -95,45 +95,45 @@ export function paste(options = {}) {
 
   const oldToNewIdMap = new Map()                                   // 旧ID到新ID的映射表
 
-  const newNodes = clipboard.nodes.map(node => {                    // 遍历剪贴板中的节点
+  const newNodes = clipboard.nodes.map(node => {                    // 遍历剪贴板中的节点，使用ReactFlow格式
     const newId = generateNodeId()                                 // 生成新ID
     oldToNewIdMap.set(node.id, newId)                              // 记录ID映射
 
-    let newX = node.x + offsetX                                    // 计算新X坐标
-    let newY = node.y + offsetY                                    // 计算新Y坐标
+    const nodeX = node.position?.x ?? 0                            // 获取节点X坐标（position.x格式）
+    const nodeY = node.position?.y ?? 0                            // 获取节点Y坐标（position.y格式）
+
+    let newX = nodeX + offsetX                                     // 计算新X坐标
+    let newY = nodeY + offsetY                                     // 计算新Y坐标
 
     if (options.x !== undefined && options.y !== undefined) {       // 如果指定了绝对位置
       const firstNode = clipboard.nodes[0]                         // 获取第一个节点
-      const deltaX = node.x - firstNode.x                          // 计算相对第一个节点的X偏移
-      const deltaY = node.y - firstNode.y                          // 计算相对第一个节点的Y偏移
+      const firstX = firstNode.position?.x ?? 0                    // 获取第一个节点X坐标
+      const firstY = firstNode.position?.y ?? 0                    // 获取第一个节点Y坐标
+      const deltaX = nodeX - firstX                                // 计算相对第一个节点的X偏移
+      const deltaY = nodeY - firstY                                // 计算相对第一个节点的Y偏移
       newX = options.x + deltaX                                    // 计算新X坐标
       newY = options.y + deltaY                                    // 计算新Y坐标
     }
 
-    return {                                                       // 返回新节点对象
+    return {                                                       // 返回新节点对象，使用ReactFlow格式
       ...node,                                                     // 复制原节点属性
       id: newId,                                                   // 使用新ID
-      x: newX,                                                     // 使用新X坐标
-      y: newY                                                      // 使用新Y坐标
+      position: { x: newX, y: newY }                               // 使用新坐标（position对象格式）
     }
   })
 
-  const newEdges = (clipboard.edges || []).map(edge => {            // 遍历剪贴板中的连接线
-    const newFromId = oldToNewIdMap.get(edge.from?.nodeId)         // 获取新的起始节点ID
-    const newToId = oldToNewIdMap.get(edge.to?.nodeId)             // 获取新的目标节点ID
+  const newEdges = (clipboard.edges || []).map(edge => {            // 遍历剪贴板中的连接线，使用ReactFlow格式
+    const newSourceId = oldToNewIdMap.get(edge.source)             // 获取新的起始节点ID（source字段）
+    const newTargetId = oldToNewIdMap.get(edge.target)             // 获取新的目标节点ID（target字段）
 
-    if (!newFromId || !newToId) return null                        // 如果ID映射不存在，跳过
+    if (!newSourceId || !newTargetId) return null                  // 如果ID映射不存在，跳过
 
-    return {                                                       // 返回新连接线对象
+    return {                                                       // 返回新连接线对象，使用ReactFlow格式
       id: generateEdgeId(),                                        // 生成新ID
-      from: {
-        nodeId: newFromId,                                         // 新的起始节点ID
-        portName: edge.from?.portName                              // 保持端口名不变
-      },
-      to: {
-        nodeId: newToId,                                           // 新的目标节点ID
-        portName: edge.to?.portName                                // 保持端口名不变
-      }
+      source: newSourceId,                                         // 新的起始节点ID（source字段）
+      sourceHandle: edge.sourceHandle,                             // 保持起始端口名不变（sourceHandle字段）
+      target: newTargetId,                                         // 新的目标节点ID（target字段）
+      targetHandle: edge.targetHandle                              // 保持目标端口名不变（targetHandle字段）
     }
   }).filter(Boolean)                                                // 过滤掉null值
 

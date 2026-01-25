@@ -65,9 +65,9 @@ export function createEdge(configOrFromNodeId, fromPortName, toNodeId, toPortNam
     return null                                                    // 返回null
   }
 
-  const existingEdge = edges.find(e =>                              // 检查是否已存在相同的连接
-    e.to?.nodeId === to.nodeId &&                                  // 目标节点相同
-    e.to?.portName === to.portName                                 // 目标端口相同
+  const existingEdge = edges.find(e =>                              // 检查是否已存在相同的连接，ReactFlow格式使用target/targetHandle
+    e.target === to.nodeId &&                                      // 目标节点相同
+    e.targetHandle === to.portName                                 // 目标端口相同
   )
 
   if (existingEdge) {                                               // 如果目标端口已有连接
@@ -77,16 +77,12 @@ export function createEdge(configOrFromNodeId, fromPortName, toNodeId, toPortNam
 
   const edgeId = generateEdgeId()                                   // 生成唯一的连接线ID
 
-  const newEdge = {                                                 // 创建新连接线对象
+  const newEdge = {                                                 // 创建新连接线对象，格式需要兼容ReactFlow
     id: edgeId,                                                    // 连接线ID
-    from: {                                                        // 起始端口信息
-      nodeId: from.nodeId,                                         // 起始节点ID
-      portName: from.portName                                      // 起始端口名
-    },
-    to: {                                                          // 目标端口信息
-      nodeId: to.nodeId,                                           // 目标节点ID
-      portName: to.portName                                        // 目标端口名
-    }
+    source: from.nodeId,                                           // 起始节点ID，ReactFlow格式
+    sourceHandle: from.portName,                                   // 起始端口名，ReactFlow格式
+    target: to.nodeId,                                             // 目标节点ID，ReactFlow格式
+    targetHandle: to.portName                                      // 目标端口名，ReactFlow格式
   }
 
   const currentEdges = getState().edges                             // 重新获取当前连接线列表（可能已被deleteEdge修改）
@@ -124,18 +120,18 @@ export function deleteEdge(idOrPortOrIds) {
   if (typeof idOrPortOrIds === 'object') {                          // 如果是端口对象
     const { nodeId, portName, type } = idOrPortOrIds               // 解构端口信息
 
-    const newEdges = edges.filter(e => {                           // 过滤连接线
+    const newEdges = edges.filter(e => {                           // 过滤连接线，使用ReactFlow格式字段
       if (type === 'output' || type === 'from') {                  // 如果指定是输出端口
-        return !(e.from?.nodeId === nodeId &&                      // 检查起始端口
-                 e.from?.portName === portName)
+        return !(e.source === nodeId &&                            // 检查起始端口，source是起始节点ID
+                 e.sourceHandle === portName)                      // sourceHandle是起始端口名
       }
       if (type === 'input' || type === 'to') {                     // 如果指定是输入端口
-        return !(e.to?.nodeId === nodeId &&                        // 检查目标端口
-                 e.to?.portName === portName)
+        return !(e.target === nodeId &&                            // 检查目标端口，target是目标节点ID
+                 e.targetHandle === portName)                      // targetHandle是目标端口名
       }
       return !(                                                    // 如果没指定类型，检查两端
-        (e.from?.nodeId === nodeId && e.from?.portName === portName) ||
-        (e.to?.nodeId === nodeId && e.to?.portName === portName)
+        (e.source === nodeId && e.sourceHandle === portName) ||    // 检查是否为起始端口
+        (e.target === nodeId && e.targetHandle === portName)       // 检查是否为目标端口
       )
     })
 
@@ -145,12 +141,12 @@ export function deleteEdge(idOrPortOrIds) {
 
 /**
  * getEdgesByNode - 获取与指定节点相关的所有连接线
- * 
+ *
  * 用法示例：
  *   getEdgesByNode('node_123')                                    // 获取所有相关连接线
  *   getEdgesByNode('node_123', 'input')                           // 只获取输入连接线
  *   getEdgesByNode('node_123', 'output')                          // 只获取输出连接线
- * 
+ *
  * @param {string} nodeId - 节点ID
  * @param {string} type - 连接类型，可选：'input'只获取输入、'output'只获取输出
  * @returns {Array} - 返回连接线数组
@@ -159,22 +155,22 @@ export function getEdgesByNode(nodeId, type) {
   const { edges } = getState()                                      // 获取当前连接线列表
 
   return edges.filter(e => {                                        // 过滤与该节点相关的连接线
-    const isFrom = e.from?.nodeId === nodeId                       // 是否是该节点的输出
-    const isTo = e.to?.nodeId === nodeId                           // 是否是该节点的输入
+    const isSource = e.source === nodeId                           // 是否是该节点的输出（source字段）
+    const isTarget = e.target === nodeId                           // 是否是该节点的输入（target字段）
 
-    if (type === 'input') return isTo                              // 只返回输入连接线
-    if (type === 'output') return isFrom                           // 只返回输出连接线
-    return isFrom || isTo                                          // 返回所有相关连接线
+    if (type === 'input') return isTarget                          // 只返回输入连接线
+    if (type === 'output') return isSource                         // 只返回输出连接线
+    return isSource || isTarget                                    // 返回所有相关连接线
   })
 }
 
 /**
  * getEdgeByPort - 获取连接到指定端口的连接线
- * 
+ *
  * 用法示例：
  *   getEdgeByPort('node_123', 'input_0')                          // 获取连接到该端口的线
  *   getEdgeByPort({ nodeId: 'node_123', portName: 'input_0' })    // 使用对象格式
- * 
+ *
  * @param {string|Object} nodeIdOrPort - 节点ID或端口对象
  * @param {string} portName - 端口名（当第一个参数是字符串时使用）
  * @returns {Object|null} - 返回连接线对象，不存在则返回null
@@ -192,18 +188,18 @@ export function getEdgeByPort(nodeIdOrPort, portName) {
     targetPortName = portName                                      // 使用传入的端口名
   }
 
-  return edges.find(e =>                                            // 查找匹配的连接线
-    (e.from?.nodeId === targetNodeId && e.from?.portName === targetPortName) ||
-    (e.to?.nodeId === targetNodeId && e.to?.portName === targetPortName)
+  return edges.find(e =>                                            // 查找匹配的连接线，使用ReactFlow格式
+    (e.source === targetNodeId && e.sourceHandle === targetPortName) ||  // 检查起始端口
+    (e.target === targetNodeId && e.targetHandle === targetPortName)     // 检查目标端口
   ) || null                                                         // 没找到返回null
 }
 
 /**
  * getConnectedEdgeFromInputPort - 获取连接到输入端口的连接线
- * 
+ *
  * 用法示例：
  *   getConnectedEdgeFromInputPort('node_123', 'input_0')
- * 
+ *
  * @param {string} nodeId - 节点ID
  * @param {string} portName - 输入端口名
  * @returns {Object|null} - 返回连接线对象，不存在则返回null
@@ -211,8 +207,8 @@ export function getEdgeByPort(nodeIdOrPort, portName) {
 export function getConnectedEdgeFromInputPort(nodeId, portName) {
   const { edges } = getState()                                      // 获取当前连接线列表
 
-  return edges.find(e =>                                            // 查找连接到该输入端口的连接线
-    e.to?.nodeId === nodeId &&                                     // 目标节点匹配
-    e.to?.portName === portName                                    // 目标端口匹配
+  return edges.find(e =>                                            // 查找连接到该输入端口的连接线，使用ReactFlow格式
+    e.target === nodeId &&                                         // 目标节点匹配（target字段）
+    e.targetHandle === portName                                    // 目标端口匹配（targetHandle字段）
   ) || null                                                         // 没找到返回null
 }

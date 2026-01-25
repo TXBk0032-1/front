@@ -159,10 +159,10 @@ const calcPositionBelowNode = (node, flowToScreen, zoom) => {     // 计算节�
 
 /**
  * updateNodeParam - 更新节点参数值
- * 
+ *
  * 用法示例：
  *   updateNodeParam("node_1", "count", 10)
- * 
+ *
  * 参数说明：
  *   nodeId - 节点id
  *   paramKey - 参数键名
@@ -172,10 +172,8 @@ const updateNodeParam = (nodeId, paramKey, paramValue) => {       // 更新节�
   const nodes = getState().nodes                                  // 从store获取所有节点
   const newNodes = nodes.map(node => {                            // 遍历所有节点
     if (node.id !== nodeId) return node                           // 如果不是目标节点则原样返回
-    const params = node.data?.params || {}                        // 获取节点参数对象
-    const paramConfig = params[paramKey] || {}                    // 获取指定参数的配置
-    const newParamConfig = { ...paramConfig, default: paramValue }  // 更新参数的default值
-    const newParams = { ...params, [paramKey]: newParamConfig }   // 更新参数对象
+    const params = node.data?.params || {}                        // 获取节点参数对象（简单键值对格式）
+    const newParams = { ...params, [paramKey]: paramValue }       // 直接更新参数值（registry格式是简单键值对）
     const newData = { ...node.data, params: newParams }           // 更新节点data
     return { ...node, data: newData }                             // 返回更新后的节点
   })
@@ -219,8 +217,8 @@ const NodePanel = () => {                                         // 节点面�
     viewport.zoom                                                 // 传入缩放比例
   )
 
-  const nodeName = targetNode.data?.label || "未命名节点"          // 获取节点名称
-  const params = targetNode.data?.params || {}                    // 获取节点参数对象（开发目标.txt第34行：根据节点列出所有参数）
+  const nodeName = targetNode.data?.name || targetNode.data?.label || "未命名节点"  // 获取节点名称（优先name，否则label）
+  const params = targetNode.data?.params || {}                    // 获取节点参数对象（registry格式：简单键值对）
 
   // ========== 参数改变处理 ==========
 
@@ -228,19 +226,27 @@ const NodePanel = () => {                                         // 节点面�
     updateNodeParam(nodeId, paramKey, paramValue)                 // 调用更新函数更新参数值
   }
 
+  // ========== 推断参数类型 ==========
+
+  const inferParamType = (value) => {                             // 根据值推断参数类型
+    if (typeof value === "boolean") return "boolean"              // 布尔类型
+    if (typeof value === "number") return "number"                // 数字类型
+    if (Array.isArray(value)) return "array"                      // 数组类型
+    return "string"                                               // 默认字符串类型
+  }
+
   // ========== 渲染参数编辑器 ==========
 
-  const renderParamEditor = (paramKey, paramConfig) => {          // 根据参数类型渲染对应的编辑器
-    const label = paramConfig.label || paramKey                   // 获取参数标签
-    const type = paramConfig.type || "string"                     // 获取参数类型，默认字符串
-    const value = paramConfig.default                             // 获取参数当前值
+  const renderParamEditor = (paramKey, paramValue) => {           // 根据参数值类型渲染对应的编辑器
+    const label = paramKey                                        // 参数名作为标签（registry格式：键名即标签）
+    const type = inferParamType(paramValue)                       // 自动推断参数类型
 
     if (type === "number") {                                      // 如果是数字类型
       return (                                                    // 返回数字输入组件
         <NumberInput
           key={paramKey}
           label={label}
-          value={value}
+          value={paramValue}
           onChange={v => handleParamChange(paramKey, v)}
         />
       )
@@ -251,8 +257,25 @@ const NodePanel = () => {                                         // 节点面�
         <BooleanSwitch
           key={paramKey}
           label={label}
-          value={value}
+          value={paramValue}
           onChange={v => handleParamChange(paramKey, v)}
+        />
+      )
+    }
+
+    if (type === "array") {                                       // 如果是数组类型
+      return (                                                    // 返回字符串输入组件（数组转JSON字符串显示）
+        <StringInput
+          key={paramKey}
+          label={label}
+          value={JSON.stringify(paramValue)}
+          onChange={v => {
+            try {
+              handleParamChange(paramKey, JSON.parse(v))          // 尝试解析JSON
+            } catch {
+              handleParamChange(paramKey, v)                      // 解析失败则保存原字符串
+            }
+          }}
         />
       )
     }
@@ -261,7 +284,7 @@ const NodePanel = () => {                                         // 节点面�
       <StringInput
         key={paramKey}
         label={label}
-        value={value}
+        value={String(paramValue ?? "")}
         onChange={v => handleParamChange(paramKey, v)}
       />
     )
@@ -270,13 +293,13 @@ const NodePanel = () => {                                         // 节点面�
   // ========== 渲染面板 ==========
 
   return (                                                        // 返回节点面板JSX结构
-    <div id="node-panel" className="node-panel" style={posStyle}> 
-      <div className="panel-header">                              
-        <span className="panel-title">{nodeName} 属性</span>       
+    <div id="node-panel" className="node-panel" style={posStyle}>
+      <div className="panel-header">
+        <span className="panel-title">{nodeName} 属性</span>
       </div>
-      <div className="panel-content">                             
-        {Object.entries(params).map(([key, config]) =>            // 遍历所有参数
-          renderParamEditor(key, config)                          // 渲染参数编辑器
+      <div className="panel-content">
+        {Object.entries(params).map(([key, value]) =>             // 遍历所有参数（registry格式：简单键值对）
+          renderParamEditor(key, value)                           // 渲染参数编辑器
         )}
       </div>
     </div>
