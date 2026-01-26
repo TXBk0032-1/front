@@ -20,6 +20,8 @@
 
 import '../styles/SideBar.css'                                      // 导入侧边栏样式
 import { useStore, setState } from '../store'                       // 导入store相关函数
+import { useEffect } from 'react'
+import ws from '../ws'  
 
 /**
  * CategoryItem - 分类项组件
@@ -301,6 +303,10 @@ function getGroupedNodes(registry, selectedCategory) {
  *   <Sidebar />                                                   // 在App中使用
  */
 function Sidebar() {
+  // 只运行一次await ws.getRegistry()，后续使用store中的数据
+  useEffect(() => {
+    ws.getRegistry()
+  }, [])
   return (                                                          // 返回侧边栏元素
     <div className="side-bar">                                      {/* 侧边栏容器 */}
       <CategoryBar />                                               {/* 分类栏 */}

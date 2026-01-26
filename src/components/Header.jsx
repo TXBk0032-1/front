@@ -143,10 +143,6 @@ function ActionButtons() {
 
   return (                                                          // 返回按钮组元素
     <>
-      <button                                                       /* 获取节点按钮 */
-        className="btn btn-get-nodes"                               /* 样式类名 */
-        onClick={handleGetNodes}                                    /* 绑定点击事件 */
-      >获取节点</button>
 
       <button                                                       /* 运行按钮 */
         className="btn btn-run"                                     /* 样式类名 */

@@ -171,7 +171,7 @@ class WsManager {
    * send - 发送消息到服务器
    * 
    * 用法示例：
-   *   const result = await ws.send({ type: 'get_registry' })
+   *   const result = await ws.send({ type: 'getRegistry' })
    * 
    * @param {Object} msg - 要发送的消息对象
    * @returns {Promise} - 返回服务器响应
@@ -253,7 +253,7 @@ class WsManager {
    * @param {Object} inputs - 输入数据，可选
    * @returns {Promise} - 返回执行结果
    */
-  async runBlueprint(blueprint, inputs = {}) {
+  async runBlueprint(blueprint) {
     console.log('\n' + '='.repeat(50))                              // 输出分隔线
     console.log('     运行蓝图')                                    // 输出标题
     console.log('='.repeat(50))                                     // 输出分隔线
@@ -262,16 +262,17 @@ class WsManager {
       nodes: getState().nodes,                                     // 获取节点数据
       edges: getState().edges                                      // 获取连接线数据
     }
+    console.log(bp);
+    
 
     console.log(`   节点数量: ${bp.nodes?.length || 0}`)           // 输出节点数量
     console.log(`   连线数量: ${bp.edges?.length || 0}`)           // 输出连线数量
 
     try {
       const result = await this.send({                             // 发送运行蓝图请求
-        type: 'run_blueprint',                                     // 消息类型
+        type: 'runBlueprint',                                     // 消息类型
         data: {                                                    // 消息数据
           blueprint: bp,                                           // 蓝图数据
-          inputs: inputs                                           // 输入数据
         }
       })
 
