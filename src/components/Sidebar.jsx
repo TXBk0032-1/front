@@ -212,10 +212,15 @@ function NodeList() {
 
 /**
  * getGroupedNodes - 按分类分组节点
- * 
- * 后端返回结构: { categories: { id: { id, label, color } }, nodes: { opcode: { opcode, label, category, ... } } }
- * 节点通过自身的 category 字段关联到分类的 id
- * 
+ *
+ * 支持两种数据结构:
+ *   结构A（分类包含节点列表）: { categories: { id: { label, color, nodes: ["opcode1", ...] } }, nodes: { opcode: {...} } }
+ *   结构B（节点包含分类字段）: { categories: { id: { label, color } }, nodes: { opcode: { category: "id", ... } } }
+ *
+ * 用法示例:
+ *   getGroupedNodes(registry, 'all')        // 获取所有分组
+ *   getGroupedNodes(registry, 'basic')      // 获取basic分类的节点
+ *
  * @param {Object} registry - 节点注册表对象
  * @param {string} selectedCategory - 选中的分类
  * @returns {Array} - 分组后的节点数组 [{ category, label, color, nodes }, ...]
@@ -229,6 +234,7 @@ function getGroupedNodes(registry, selectedCategory) {
   if (typeof categories !== 'object' || typeof nodes !== 'object') return [] // 如果不是对象，返回空数组
 
   const categoryMap = new Map()                                     // 用Map存储分类信息，方便查找
+  const nodeToCategory = new Map()                                  // 用Map存储节点opcode到分类id的映射
 
   Object.entries(categories).forEach(([catId, catData]) => {        // 遍历分类对象
     categoryMap.set(catId, {                                        // 以id为键存储分类信息
@@ -237,6 +243,13 @@ function getGroupedNodes(registry, selectedCategory) {
       color: catData.color || '#666666',                            // 分类颜色
       nodes: []                                                     // 该分类的节点数组（待填充）
     })
+
+    const nodeList = catData.nodes                                  // 获取分类中的节点列表
+    if (Array.isArray(nodeList)) {                                  // 如果是数组（结构A）
+      nodeList.forEach(opcode => {                                  // 遍历节点opcode列表
+        nodeToCategory.set(opcode, catId)                           // 建立节点到分类的映射
+      })
+    }
   })
 
   categoryMap.set('', {                                             // 添加默认分类（空字符串）
@@ -247,7 +260,12 @@ function getGroupedNodes(registry, selectedCategory) {
   })
 
   Object.values(nodes).forEach(node => {                            // 遍历所有节点
-    const catId = node.category || ''                               // 获取节点的分类id，默认空字符串
+    let catId = node.category                                       // 尝试从节点获取分类id（结构B）
+    if (catId === undefined || catId === null) {                    // 如果节点没有category字段
+      catId = nodeToCategory.get(node.opcode)                       // 从映射中查找（结构A）
+    }
+    catId = catId || ''                                             // 如果还是没有，归入未分类
+
     const cat = categoryMap.get(catId)                              // 查找对应的分类
     if (cat) {                                                      // 如果分类存在
       cat.nodes.push(node)                                          // 将节点添加到该分类
