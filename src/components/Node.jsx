@@ -47,7 +47,7 @@ const simulateDragFromSource = (edge, event) => {                         // 模
   const selector = `[data-nodeid="${edge.source}"][data-handleid="${edge.sourceHandle}"]`  // 源端口选择器
   const handle = document.querySelector(selector)                         // 查找源端口DOM
   if (!handle) return                                                     // 找不到则返回
-  
+
   const fakeEvent = new MouseEvent("mousedown", {                         // 创建模拟事件
     bubbles: true,                                                        // 冒泡
     cancelable: true,                                                     // 可取消
@@ -74,7 +74,7 @@ const startDragDetection = (event, edge, setEdges) => {                   // 开
     const dy = Math.abs(e.clientY - startY)                               // Y移动距离
     if (hasDragged) return                                                // 已触发则跳过
     if (dx <= DRAG_THRESHOLD && dy <= DRAG_THRESHOLD) return              // 未超阈值则跳过
-    
+
     hasDragged = true                                                     // 标记已触发
     setEdges(eds => eds.filter(e => e.id !== edge.id))                    // 删除边
     simulateDragFromSource(edge, e)                                       // 从源端口拖拽
@@ -143,14 +143,14 @@ const Node = ({ id, data }) => {                                          // 节
   // ===== 数据 =====
   const edges = useEdges()                                                // 获取所有边
   const { setEdges } = useReactFlow()                                     // 获取setEdges
-  
+
   const color = data?.color || "rgb(137, 146, 235)"                       // 节点颜色
   const label = data?.name || data?.label || "未命名节点"                   // 节点名称
   const inputs = data?.ports?.in || []                                    // 输入端口
   const outputs = data?.ports?.out || []                                  // 输出端口
 
   // ===== 事件处理 =====
-  
+
   const onClick = (e) => {                                                // 单击处理
     e.stopPropagation()                                                   // 阻止冒泡
     const isCtrl = e.ctrlKey || e.metaKey                                 // 是否按Ctrl
@@ -159,6 +159,12 @@ const Node = ({ id, data }) => {                                          // 节
     } else {
       window.cmd.clearSelect()                                            // 清空选中
       window.cmd.selectNode(id)                                           // 选中当前
+    }
+    // 如果当前节点id不是节点菜单和面板的nodeId，就隐藏菜单和面板
+    const nodeMenuId = getState().nodeMenu.nodeId
+    const nodePanelId = getState().nodePanel.nodeId
+    if (id !== nodeMenuId && id !== nodePanelId) {
+      setState({ nodeMenu: { visible: false }, nodePanel: { visible: false } })
     }
   }
 
@@ -188,7 +194,7 @@ const Node = ({ id, data }) => {                                          // 节
   }
 
   // ===== 渲染 =====
-  
+
   return (
     <div
       className="container"
