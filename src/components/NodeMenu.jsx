@@ -105,8 +105,8 @@ const calcPositionAroundNode = (node, flowToScreen, zoom) => {    // 计算节�
   const nodeY = node.position?.y || 0                             // 获取节点Y坐标，默认0
   const nodeWidth = node.measured?.width || 200                   // 获取节点宽度，默认200
   const nodeHeight = node.measured?.height || 60                  // 获取节点高度，默认60
-  const centerX = nodeX + nodeWidth / 2                           // 计算节点中心X坐标
-  const topY = nodeY - 10 / zoom                                  // 计算节点顶部上方Y坐标，留出10像素间距
+  const centerX = nodeX                           // 计算节点中心X坐标
+  const topY = nodeY - nodeHeight                                  // 计算节点顶部上方Y坐标，留出10像素间距
   const screenPos = flowToScreen({ x: centerX, y: topY })         // 将画布坐标转换为屏幕坐标
   return screenPos                                                // 返回屏幕坐标
 }

@@ -59,7 +59,7 @@ export function arrange(options = {}) {
  */
 export function zoomIn(step = 0.1) {
   const { viewport } = getState()                                   // 获取当前视口状态
-  const newZoom = Math.min(viewport.zoom + step, 3)                 // 计算新缩放值，最大3倍
+  const newZoom = Math.min(viewport.zoom + step, 2)                 // 计算新缩放值，最大3倍
   setState({ viewport: { ...viewport, zoom: newZoom } })            // 更新视口缩放
 }
 
@@ -74,7 +74,7 @@ export function zoomIn(step = 0.1) {
  */
 export function zoomOut(step = 0.1) {
   const { viewport } = getState()                                   // 获取当前视口状态
-  const newZoom = Math.max(viewport.zoom - step, 0.1)               // 计算新缩放值，最小0.1倍
+  const newZoom = Math.max(viewport.zoom - step, 0.5)               // 计算新缩放值，最小0.1倍
   setState({ viewport: { ...viewport, zoom: newZoom } })            // 更新视口缩放
 }
 

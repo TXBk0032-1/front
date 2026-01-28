@@ -149,8 +149,8 @@ const calcPositionBelowNode = (node, flowToScreen, zoom) => {     // 计算节�
   const nodeY = node.position?.y || 0                             // 获取节点Y坐标，默认0
   const nodeWidth = node.measured?.width || 200                   // 获取节点宽度，默认200
   const nodeHeight = node.measured?.height || 60                  // 获取节点高度，默认60
-  const centerX = nodeX + nodeWidth / 2                           // 计算节点中心X坐标
-  const bottomY = nodeY + nodeHeight + 10 / zoom                  // 计算节点底部下方Y坐标，留出10像素间距
+  const centerX = nodeX                            // 计算节点中心X坐标
+  const bottomY = nodeY + nodeHeight                   // 计算节点底部下方Y坐标，留出10像素间距
   const screenPos = flowToScreen({ x: centerX, y: bottomY })      // 将画布坐标转换为屏幕坐标
   return screenPos                                                // 返回屏幕坐标
 }
@@ -219,7 +219,8 @@ const NodePanel = () => {                                         // 节点面�
 
   const nodeName = targetNode.data?.name || targetNode.data?.label || "未命名节点"  // 获取节点名称（优先name，否则label）
   const params = targetNode.data?.params || {}                    // 获取节点参数对象（registry格式：简单键值对）
-
+  // 如果没有参数就不显示
+  if (Object.keys(params).length === 0) return null
   // ========== 参数改变处理 ==========
 
   const handleParamChange = (paramKey, paramValue) => {           // 处理参数值改变
