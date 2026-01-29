@@ -55,13 +55,31 @@ import '../styles/Blueprint.css'                                    // 导入蓝
  * handleNodesChange - 处理节点变化事件
  * 
  * 当节点位置、选择状态等变化时触发
+ * 如果是选中状态变化，同步更新selectedIds
  * 
  * @param {Array} changes - 变化数组
  */
 function handleNodesChange(changes) {
-  setState((state) => ({                                            // 更新store中的节点数据
-    nodes: applyNodeChanges(changes, state.nodes)                  // 应用节点变化
-  }))
+  setState((state) => {                                            // 更新store中的节点数据
+    const newNodes = applyNodeChanges(changes, state.nodes)      // 应用节点变化
+    
+    const hasSelectionChange = changes.some(change =>            // 检查是否有选中状态变化
+      change.type === 'select' || change.selected !== undefined
+    )
+    
+    if (hasSelectionChange) {                                     // 如果有选中状态变化
+      const newSelectedIds = newNodes                             // 提取所有选中节点的ID
+        .filter(node => node.selected)                           // 过滤出选中的节点
+        .map(node => node.id)                                     // 提取节点ID
+      
+      return {                                                    // 返回更新后的状态
+        nodes: newNodes,                                           // 更新节点
+        selectedIds: newSelectedIds                               // 同步更新选中ID列表
+      }
+    }
+    
+    return { nodes: newNodes }                                    // 没有选中变化，只更新节点
+  })
 }
 
 /**
@@ -168,8 +186,18 @@ function Blueprint() {
   const nodes = useStore(s => s.nodes)                              // 从store获取节点数据
   const edges = useStore(s => s.edges)                              // 从store获取连接线数据
   const viewport = useStore(s => s.viewport)                        // 从store获取视口状态
+  const selectedIds = useStore(s => s.selectedIds)                  // 从store获取选中的节点ID列表
+
 
   const nodeTypes = useMemo(() => ({ baseNode: Node }), [])         // 定义节点类型映射，使用useMemo缓存
+
+  const nodesWithSelected = useMemo(() => {                         // 计算带有selected属性的节点数组
+    const selectedSet = new Set(selectedIds)                        // 将selectedIds转为Set，提高查找效率
+    return nodes.map(node => ({                                      // 遍历所有节点
+      ...node,                                                     // 保留节点原有属性
+      selected: selectedSet.has(node.id)                            // 根据selectedIds设置selected属性
+    }))
+  }, [nodes, selectedIds])                                          // 当nodes或selectedIds变化时重新计算
 
   const { screenToFlowPosition } = useReactFlow()                   // 获取ReactFlow的坐标转换函数
 
@@ -201,7 +229,7 @@ function Blueprint() {
 
   return (                                                          // 返回蓝图元素
     <ReactFlow                                                      /* ReactFlow容器 */
-      nodes={nodes}                                                 /* 绑定节点数据 */
+      nodes={nodesWithSelected}                                     /* 绑定带有selected属性的节点数据 */
       edges={edges}                                                 /* 绑定连接线数据 */
       onNodesChange={handleNodesChange}                             /* 绑定节点变化事件 */
       onEdgesChange={handleEdgesChange}                             /* 绑定连接线变化事件 */

@@ -171,7 +171,7 @@ const Node = ({ id, data }) => {                                          // 节
   const onContextMenu = (e) => {                                          // 右键处理
     e.preventDefault()                                                    // 阻止默认
     e.stopPropagation()                                                   // 阻止冒泡
-    window.cmd.selectNode(id)                                             // 选中当前
+    window.cmd.selectNode(id, true)                                             // 选中当前
     setState({                                                            // 显示菜单和面板
       nodeMenu: { visible: true, nodeId: id },
       nodePanel: { visible: true, nodeId: id }
