@@ -38,7 +38,8 @@ import "../styles/NodeMenu.css"                                   // 导入节�
  */
 const MenuItem = ({ icon, label, onClick }) => {                  // 菜单项组件，接收icon、label、onClick三个参数
 
-  const handleClick = () => {                                     // 处理点击事件
+  const handleClick = (e) => {                                   // 处理点击事件
+    e.stopPropagation()                                           // 阻止事件冒泡，防止触发画布的点击事件
     if (onClick) onClick()                                        // 如果有回调函数则执行
     hideMenu()                                                    // 点击后隐藏菜单
   }
@@ -167,7 +168,7 @@ const NodeMenu = () => {                                          // 节点菜�
   }
 
   const handleDelete = () => {                                    // 处理删除节点（开发目标.txt第31行：删除节点）
-    window.cmd.deleteNode(nodeId)                                 // 调用全局命令：删除指定节点
+    window.cmd.deleteSelectedNodes()                             // 调用全局命令：删除所有选中的节点
   }
 
   // ========== 渲染菜单 ==========
