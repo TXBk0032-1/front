@@ -45,11 +45,11 @@ const MenuItem = ({ icon, label, onClick }) => {                  // 菜单项�
   }
 
   return (                                                        // 返回菜单项JSX结构
-    <div className="node-menu-item" onClick={handleClick}>        
-      <div className="icon-container">                            
-        <img src={icon} alt={label} className="menu-icon" />      
+    <div className="node-menu-item" onClick={handleClick}>
+      <div className="icon-container">
+        <img src={icon} alt={label} className="menu-icon" />
       </div>
-      <span className="menu-label">{label}</span>                 
+      <span className="menu-label">{label}</span>
     </div>
   )
 }
@@ -174,7 +174,7 @@ const NodeMenu = () => {                                          // 节点菜�
   // ========== 渲染菜单 ==========
 
   return (                                                        // 返回节点菜单JSX结构
-    <div id="node-menu" className="node-menu" style={posStyle}>   
+    <div id="node-menu" className="node-menu" style={posStyle}>
       <MenuItem                                                   // 复制并粘贴菜单项
         icon={copyPasteIcon}                                      // 复制粘贴图标
         label="复制粘贴"                                           // 菜单项文字
