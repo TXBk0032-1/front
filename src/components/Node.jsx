@@ -109,7 +109,7 @@ const InputPort = ({ id, label, nodeId, edges, setEdges }) => {          // 输�
     startDragDetection(e, edge, setEdges)                                 // 开始拖拽检测
   }
 
-  const displayLabel = label || id                                        // 显示标签（优先使用label，否则使用id）
+  const displayLabel = label                                        // 显示标签（优先使用label，否则使用id）
 
   return (
     <div className="port-item">
@@ -126,7 +126,7 @@ const InputPort = ({ id, label, nodeId, edges, setEdges }) => {          // 输�
  * 功能：渲染输出端口
  */
 const OutputPort = ({ id, label }) => {                                   // 输出端口组件
-  const displayLabel = label || id                                        // 显示标签（优先使用label，否则使用id）
+  const displayLabel = label                                        // 显示标签（优先使用label，否则使用id）
   return (
     <div className="port-item">
       <span className="output-label">{displayLabel}</span>

@@ -237,7 +237,7 @@ function Blueprint() {
       onViewportChange={handleViewportChange}                       /* 绑定视口变化事件 */
       onConnect={handleConnect}                                     /* 绑定连接事件 */
       nodeTypes={nodeTypes}                                         /* 节点类型映射 */
-      onPaneContextMenu={handlePaneClick}                           /* 绑定空白区域右键事件 */
+      onPaneClick={handlePaneClick}                           /* 绑定空白区域右键事件 */
       onContextMenu={handleContextMenu}                             /* 阻止默认右键菜单 */
       proOptions={{ hideAttribution: true }}                        /* 隐藏ReactFlow水印 */
       {...FLOW_CONFIG}                                              /* 展开流程配置 */

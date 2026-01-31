@@ -60,7 +60,9 @@
 
 /* ========== 参数标签 ========== */
 
-.param-label,label,.slider__output {
+.param-label,
+label,
+.slider__output {
   font-size: 12px;
   font-weight: 500;
   color: rgb(111, 125, 176);
@@ -85,9 +87,19 @@ input[type=number]::-webkit-outer-spin-button {
   border-radius: 100px;
 }
 
+[data-slot="listbox-item"] {
+  padding-inline: 0;
+  /* padding: 0 12px; */
+  /* width: fit-content; */
+}
 
-
-
+svg[data-slot="listbox-item-indicator--checkmark"] {
+  stroke-width: 4 !important;
+  stroke: #8b92e5 !important;
+}
+[data-slot="select"] {
+  width: max-content;
+}
 
 /* ========== 滚动条样式 ========== */
 

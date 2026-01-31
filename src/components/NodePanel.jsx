@@ -220,32 +220,58 @@ const BoolInput = ({ label, value, onChange }) => {              // 布尔开关
  *   value - 当前值（数组）
  *   onChange - 值改变时的回调函数
  */
-const ListInput = ({ label, value, onChange }) => {              // 列表输入组件，接收label、value、onChange三个参数
-  const displayValue = JSON.stringify(value)                     // 将数组转为JSON字符串显示
+const ListInput = ({ label, value, onChange }) => {
+  // 将数组转为显示字符串（不包含外层的[]）
+  const displayValue = Array.isArray(value) ? value.join(', ') : ''
 
-  return (                                                       // 返回列表输入JSX结构
+  return (
     <div className="param-item">
       <span className="param-label">{label}</span>
-      <Input                                                     // HeroUI输入框组件
-        type="text"                                              // 输入类型为文本
-        aria-label={label}                                       // 无障碍标签
-        placeholder="[1, 2, 3]"                                  // 占位符
-        value={displayValue}                                     // 当前值（JSON字符串）
-        onChange={e => {                                         // 值改变处理
-          try {                                                  // 尝试解析JSON
-            const parsed = JSON.parse(e.target.value)            // 解析JSON字符串
-            if (Array.isArray(parsed)) {                         // 如果解析结果是数组
-              onChange(parsed)                                   // 回调新数组
-            }
-          } catch {                                              // 解析失败则忽略
-            // 用户输入中，暂不更新
+      <Input
+        type="text"
+        aria-label={label}
+        placeholder="1, 2, 3"
+        value={displayValue}
+        onChange={e => {
+          // 自动将中文逗号转换为英文逗号
+          let inputValue = e.target.value.replace(/，/g, ',')
+          
+          // 检查是否以逗号结尾
+          const endsWithComma = inputValue.trim().endsWith(',')
+          
+          // 将输入内容按逗号分割
+          const items = inputValue.split(',').map(item => item.trim())
+          
+          // 解析每个项目
+          const parsedItems = items
+            .filter(item => item !== '') // 过滤空项
+            .map(item => {
+              // 尝试解析为数字
+              const num = Number(item)
+              if (!isNaN(num) && item !== '') return num
+              // 尝试解析为布尔值
+              if (item === 'true') return true
+              if (item === 'false') return false
+              // 尝试解析为null
+              if (item === 'null') return null
+              // 否则保持为字符串
+              return item
+            })
+          
+          // 如果以逗号结尾，在解析结果中添加一个空字符串占位
+          if (endsWithComma) {
+            parsedItems.push('')
           }
+          
+          onChange(parsedItems)
         }}
-        className="param-input"                                  // 样式类
+        className="param-input"
       />
     </div>
   )
 }
+
+
 
 // ========== 枚举选择组件 ==========
 
@@ -273,8 +299,8 @@ const EnumInput = ({ label, value, options, onChange }) => {
         className="param-select"
         placeholder="请选择"
         aria-label={label}
-        value={value}  // 使用 value 而不是 selectedKey
-        onChange={onChange}  // 直接使用传入的 onChange
+        value={value} 
+        onChange={onChange}
       >
         <Select.Trigger>
           <Select.Value />
