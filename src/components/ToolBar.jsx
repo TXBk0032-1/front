@@ -142,14 +142,14 @@ const ToolBar = () => {                                           // 工具栏�
       </div>
 
       {/* 整理布局组 */}
-      <div className="toolbar-group">                             
+      {/* <div className="toolbar-group">                             
         <ToolBarButton                                            // 整理按钮
           icon={arrangeIcon}                                      // 整理图标
           alt="整理"                                               // 图片描述
           title="自动整理布局"                                      // 悬停提示
           onClick={handleArrange}                                 // 点击回调
         />
-      </div>
+      </div> */}
     </div>
   )
 }
