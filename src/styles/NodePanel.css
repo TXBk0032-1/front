@@ -55,11 +55,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  height: 40px;
 }
 
 /* ========== 参数标签 ========== */
 
-.param-label {
+.param-label,label,.slider__output {
   font-size: 12px;
   font-weight: 500;
   color: rgb(111, 125, 176);
@@ -73,7 +74,6 @@
   font-size: 12px;
   width: auto;
   max-width: 100px;
-  height: 25px;
 }
 
 input[type=number]::-webkit-inner-spin-button,
@@ -84,6 +84,10 @@ input[type=number]::-webkit-outer-spin-button {
 .number-input {
   border-radius: 100px;
 }
+
+
+
+
 
 /* ========== 滚动条样式 ========== */
 

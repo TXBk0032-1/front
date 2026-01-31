@@ -18,33 +18,131 @@
 
 import { useStore, setState, getState } from "../store"          // 导入store的hook和状态操作函数
 import { useReactFlow } from "@xyflow/react"                      // 导入ReactFlow的hook获取坐标转换函数
-import { Input, Switch } from "@heroui/react"                     // 导入HeroUI的输入框和开关组件
+import { Label, ListBox, Input, Switch, Slider, Select } from "@heroui/react"    // 导入HeroUI的输入框、开关、滑块、选择器组件
 import "../styles/NodePanel.css"                                  // 导入节点面板样式
 
-// ========== 数字输入组件 ==========
+// ========== 整数输入组件 ==========
 
 /**
- * NumberInput - 数字输入组件
- * 
+ * IntInput - 整数输入组件
+ *
  * 用法示例：
- *   <NumberInput label="数量" value={10} onChange={v => console.log(v)} />
- * 
+ *   <IntInput label="数量" value={10} range={[0, 100]} onChange={v => console.log(v)} />
+ *
  * 参数说明：
  *   label - 参数名称
  *   value - 当前值
+ *   range - 可选的范围限制 [min, max]
  *   onChange - 值改变时的回调函数
  */
-const NumberInput = ({ label, value, onChange }) => {             // 数字输入组件，接收label、value、onChange三个参数
-  return (                                                        // 返回数字输入JSX结构
-    <div className="param-item">                                  
-      <span className="param-label">{label}</span>                
-      <Input                                                      // HeroUI输入框组件
-        type="number"                                             // 输入类型为数字
-        aria-label={label}                                        // 无障碍标签
-        placeholder={label}                                       // 占位符
-        value={String(value)}                                     // 当前值转为字符串
-        onChange={e => onChange(Number(e.target.value))}          // 值改变时转为数字并回调
-        className="param-input number-input"                      // 样式类
+const IntInput = ({ label, value, range, onChange }) => {        // 整数输入组件，接收label、value、range、onChange参数
+  const hasRange = Array.isArray(range) && range.length === 2    // 判断是否有有效的范围限制
+  const minValue = hasRange ? range[0] : undefined               // 获取最小值
+  const maxValue = hasRange ? range[1] : undefined               // 获取最大值
+
+  if (hasRange) {                                                // 如果有范围限制，使用滑块组件
+    return (                                                     // 返回滑块JSX结构
+      <div className="param-item">
+        <Slider
+          className="param-slider"
+          aria-label={label}
+          size="sm"
+          step={1}
+          minValue={minValue}
+          maxValue={maxValue}
+          value={value}
+          onChange={onChange}
+        >
+          <Label>{label}</Label>  {/* 使用 HeroUI 的 Label 组件 */}
+          <Slider.Output />  {/* 使用 Slider.Output 显示当前值，替代原来的 param-value */}
+          <Slider.Track>
+            <Slider.Fill />
+            <Slider.Thumb />
+          </Slider.Track>
+        </Slider>
+      </div>
+
+    )
+  }
+
+  return (                                                       // 没有范围限制，使用输入框
+    <div className="param-item">
+      <span className="param-label">{label}</span>
+      <Input                                                     // HeroUI输入框组件
+        type="number"                                            // 输入类型为数字
+        aria-label={label}                                       // 无障碍标签
+        placeholder={label}                                      // 占位符
+        value={String(value)}                                    // 当前值转为字符串
+        onChange={e => {                                         // 值改变处理
+          const num = parseInt(e.target.value, 10)               // 转为整数
+          if (!isNaN(num)) onChange(num)                         // 如果是有效数字则回调
+        }}
+        className="param-input number-input"                     // 样式类
+      />
+    </div>
+  )
+}
+
+// ========== 浮点数输入组件 ==========
+
+/**
+ * FloatInput - 浮点数输入组件
+ *
+ * 用法示例：
+ *   <FloatInput label="比例" value={0.5} range={[0, 1]} onChange={v => console.log(v)} />
+ *
+ * 参数说明：
+ *   label - 参数名称
+ *   value - 当前值
+ *   range - 可选的范围限制 [min, max]
+ *   onChange - 值改变时的回调函数
+ */
+const FloatInput = ({ label, value, range, onChange }) => {      // 浮点数输入组件，接收label、value、range、onChange参数
+  const hasRange = Array.isArray(range) && range.length === 2    // 判断是否有有效的范围限制
+  const minValue = hasRange ? range[0] : undefined               // 获取最小值
+  const maxValue = hasRange ? range[1] : undefined               // 获取最大值
+
+  if (hasRange) {                                                // 如果有范围限制，使用滑块组件
+    const rangeSpan = maxValue - minValue                        // 计算范围跨度
+    const step = rangeSpan > 10 ? 0.1 : 0.01                     // 根据范围自动确定步长
+
+    return (                                                     // 返回滑块JSX结构
+      <div className="param-item">
+        <Slider
+          className="param-slider"
+          aria-label={label}
+          size="sm"
+          step={step}
+          minValue={minValue}
+          maxValue={maxValue}
+          value={value}
+          onChange={onChange}
+        >
+          <Label>{label}</Label>
+          <Slider.Output />
+          <Slider.Track>
+            <Slider.Fill />
+            <Slider.Thumb />
+          </Slider.Track>
+        </Slider>
+      </div>
+    )
+  }
+
+  return (                                                       // 没有范围限制，使用输入框
+    <div className="param-item">
+      <span className="param-label">{label}</span>
+      <Input                                                     // HeroUI输入框组件
+        type="number"                                            // 输入类型为数字
+        step="any"                                               // 允许任意小数
+        aria-label={label}                                       // 无障碍标签
+        placeholder={label}                                      // 占位符
+        value={String(value)}                                    // 当前值转为字符串
+        onChange={e => {                                         // 值改变处理
+          const num = parseFloat(e.target.value)                 // 转为浮点数
+          if (!isNaN(num)) onChange(num)                         // 如果是有效数字则回调
+        }}
+        className="param-input number-input"                     // 样式类
       />
     </div>
   )
@@ -65,8 +163,8 @@ const NumberInput = ({ label, value, onChange }) => {             // 数字输�
  */
 const StringInput = ({ label, value, onChange }) => {             // 字符串输入组件，接收label、value、onChange三个参数
   return (                                                        // 返回字符串输入JSX结构
-    <div className="param-item">                                  
-      <span className="param-label">{label}</span>                
+    <div className="param-item">
+      <span className="param-label">{label}</span>
       <Input                                                      // HeroUI输入框组件
         type="text"                                               // 输入类型为文本
         aria-label={label}                                        // 无障碍标签
@@ -82,32 +180,126 @@ const StringInput = ({ label, value, onChange }) => {             // 字符串�
 // ========== 布尔开关组件 ==========
 
 /**
- * BooleanSwitch - 布尔开关组件
- * 
+ * BoolInput - 布尔开关组件
+ *
  * 用法示例：
- *   <BooleanSwitch label="启用" value={true} onChange={v => console.log(v)} />
- * 
+ *   <BoolInput label="启用" value={true} onChange={v => console.log(v)} />
+ *
  * 参数说明：
  *   label - 参数名称
  *   value - 当前值
  *   onChange - 值改变时的回调函数
  */
-const BooleanSwitch = ({ label, value, onChange }) => {           // 布尔开关组件，接收label、value、onChange三个参数
-  return (                                                        // 返回布尔开关JSX结构
-    <div className="param-item">                                  
-      <span className="param-label">{label}</span>                
-      <Switch                                                     // HeroUI开关组件
-        size="md"                                                 // 中等尺寸
-        isSelected={value}                                        // 当前选中状态
-        onChange={onChange}                                       // 值改变时回调
+const BoolInput = ({ label, value, onChange }) => {              // 布尔开关组件，接收label、value、onChange三个参数
+  return (                                                       // 返回布尔开关JSX结构
+    <div className="param-item">
+      <Label className="param-label">{label}</Label>
+      <Switch                                                    // HeroUI开关组件
+        size="md"                                                // 中等尺寸
+        isSelected={value}                                       // 当前选中状态
+        onChange={onChange}                                      // 值改变时回调
       >
-        <Switch.Control>                                          
-          <Switch.Thumb />                                        
+        <Switch.Control>
+          <Switch.Thumb />
         </Switch.Control>
       </Switch>
     </div>
   )
 }
+
+// ========== 列表输入组件 ==========
+
+/**
+ * ListInput - 列表输入组件
+ *
+ * 用法示例：
+ *   <ListInput label="维度" value={[1, 2, 3]} onChange={v => console.log(v)} />
+ *
+ * 参数说明：
+ *   label - 参数名称
+ *   value - 当前值（数组）
+ *   onChange - 值改变时的回调函数
+ */
+const ListInput = ({ label, value, onChange }) => {              // 列表输入组件，接收label、value、onChange三个参数
+  const displayValue = JSON.stringify(value)                     // 将数组转为JSON字符串显示
+
+  return (                                                       // 返回列表输入JSX结构
+    <div className="param-item">
+      <span className="param-label">{label}</span>
+      <Input                                                     // HeroUI输入框组件
+        type="text"                                              // 输入类型为文本
+        aria-label={label}                                       // 无障碍标签
+        placeholder="[1, 2, 3]"                                  // 占位符
+        value={displayValue}                                     // 当前值（JSON字符串）
+        onChange={e => {                                         // 值改变处理
+          try {                                                  // 尝试解析JSON
+            const parsed = JSON.parse(e.target.value)            // 解析JSON字符串
+            if (Array.isArray(parsed)) {                         // 如果解析结果是数组
+              onChange(parsed)                                   // 回调新数组
+            }
+          } catch {                                              // 解析失败则忽略
+            // 用户输入中，暂不更新
+          }
+        }}
+        className="param-input"                                  // 样式类
+      />
+    </div>
+  )
+}
+
+// ========== 枚举选择组件 ==========
+
+/**
+ * EnumInput - 枚举选择组件
+ *
+ * 用法示例：
+ *   <EnumInput label="模式" value="option1" options={{option1: "选项1", option2: "选项2"}} onChange={v => console.log(v)} />
+ *
+ * 参数说明：
+ *   label - 参数名称
+ *   value - 当前值（选项的key）
+ *   options - 选项对象 {key: label}
+ *   onChange - 值改变时的回调函数
+ */
+
+
+const EnumInput = ({ label, value, options, onChange }) => {
+  const optionEntries = Object.entries(options || {})
+
+  return (
+    <div className="param-item">
+      <Label className="param-label">{label}</Label>
+      <Select
+        className="param-select"
+        placeholder="请选择"
+        aria-label={label}
+        value={value}  // 使用 value 而不是 selectedKey
+        onChange={onChange}  // 直接使用传入的 onChange
+      >
+        <Select.Trigger>
+          <Select.Value />
+          <Select.Indicator />
+        </Select.Trigger>
+        <Select.Popover>
+          <ListBox>
+            {optionEntries.map(([key, optionLabel]) => (
+              <ListBox.Item
+                key={key}
+                id={key}
+                textValue={optionLabel}
+              >
+                {optionLabel}
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            ))}
+          </ListBox>
+        </Select.Popover>
+      </Select>
+    </div>
+  )
+}
+
+
 
 // ========== 计算面板位置样式 ==========
 
@@ -172,8 +364,10 @@ const updateNodeParam = (nodeId, paramKey, paramValue) => {       // 更新节�
   const nodes = getState().nodes                                  // 从store获取所有节点
   const newNodes = nodes.map(node => {                            // 遍历所有节点
     if (node.id !== nodeId) return node                           // 如果不是目标节点则原样返回
-    const params = node.data?.params || {}                        // 获取节点参数对象（简单键值对格式）
-    const newParams = { ...params, [paramKey]: paramValue }       // 直接更新参数值（registry格式是简单键值对）
+    const params = node.data?.params || {}                        // 获取节点参数对象
+    const param = params[paramKey]                                     // 获取指定参数值
+    const newParam = { ...param, value: paramValue }
+    const newParams = { ...params, [paramKey]: newParam }           // 更新参数对象
     const newData = { ...node.data, params: newParams }           // 更新节点data
     return { ...node, data: newData }                             // 返回更新后的节点
   })
@@ -218,65 +412,77 @@ const NodePanel = () => {                                         // 节点面�
   )
 
   const nodeName = targetNode.data?.name || targetNode.data?.label || "未命名节点"  // 获取节点名称（优先name，否则label）
-  const params = targetNode.data?.params || {}                    // 获取节点参数对象（registry格式：简单键值对）
-  // 如果没有参数就不显示
-  if (Object.keys(params).length === 0) return null
+  const nodeParams = targetNode.data?.params || {}            // 获取节点注册信息（包含参数定义）
+
+  // 如果没有参数配置就不显示
+  if (Object.keys(nodeParams).length === 0) return null
   // ========== 参数改变处理 ==========
 
   const handleParamChange = (paramKey, paramValue) => {           // 处理参数值改变
     updateNodeParam(nodeId, paramKey, paramValue)                 // 调用更新函数更新参数值
   }
 
-  // ========== 推断参数类型 ==========
-
-  const inferParamType = (value) => {                             // 根据值推断参数类型
-    if (typeof value === "boolean") return "boolean"              // 布尔类型
-    if (typeof value === "number") return "number"                // 数字类型
-    if (Array.isArray(value)) return "array"                      // 数组类型
-    return "string"                                               // 默认字符串类型
-  }
-
   // ========== 渲染参数编辑器 ==========
 
-  const renderParamEditor = (paramKey, paramValue) => {           // 根据参数值类型渲染对应的编辑器
-    const label = paramKey                                        // 参数名作为标签（registry格式：键名即标签）
-    const type = inferParamType(paramValue)                       // 自动推断参数类型
+  const renderParamEditor = (paramKey, paramConfig) => {          // 根据参数配置渲染对应的编辑器
+    const label = paramConfig.label || paramKey                   // 获取参数标签（优先使用label，否则用key）
+    const type = paramConfig.type || "str"                        // 获取参数类型（默认字符串）
+    const currentValue = paramConfig.value ?? paramConfig.default ?? "没有值"           // 获取当前值
 
-    if (type === "number") {                                      // 如果是数字类型
-      return (                                                    // 返回数字输入组件
-        <NumberInput
+    if (type === "int") {                                         // 如果是整数类型
+      return (                                                    // 返回整数输入组件
+        <IntInput
           key={paramKey}
           label={label}
-          value={paramValue}
+          value={currentValue}
+          range={paramConfig.range}
           onChange={v => handleParamChange(paramKey, v)}
         />
       )
     }
 
-    if (type === "boolean") {                                     // 如果是布尔类型
+    if (type === "float") {                                       // 如果是浮点数类型
+      return (                                                    // 返回浮点数输入组件
+        <FloatInput
+          key={paramKey}
+          label={label}
+          value={currentValue}
+          range={paramConfig.range}
+          onChange={v => handleParamChange(paramKey, v)}
+        />
+      )
+    }
+
+    if (type === "bool") {                                        // 如果是布尔类型
       return (                                                    // 返回布尔开关组件
-        <BooleanSwitch
+        <BoolInput
           key={paramKey}
           label={label}
-          value={paramValue}
+          value={currentValue}
           onChange={v => handleParamChange(paramKey, v)}
         />
       )
     }
 
-    if (type === "array") {                                       // 如果是数组类型
-      return (                                                    // 返回字符串输入组件（数组转JSON字符串显示）
-        <StringInput
+    if (type === "list") {                                        // 如果是列表类型
+      return (                                                    // 返回列表输入组件
+        <ListInput
           key={paramKey}
           label={label}
-          value={JSON.stringify(paramValue)}
-          onChange={v => {
-            try {
-              handleParamChange(paramKey, JSON.parse(v))          // 尝试解析JSON
-            } catch {
-              handleParamChange(paramKey, v)                      // 解析失败则保存原字符串
-            }
-          }}
+          value={currentValue}
+          onChange={v => handleParamChange(paramKey, v)}
+        />
+      )
+    }
+
+    if (type === "enum") {                                        // 如果是枚举类型
+      return (                                                    // 返回枚举选择组件
+        <EnumInput
+          key={paramKey}
+          label={label}
+          value={currentValue}
+          options={paramConfig.options}
+          onChange={v => handleParamChange(paramKey, v)}
         />
       )
     }
@@ -285,7 +491,7 @@ const NodePanel = () => {                                         // 节点面�
       <StringInput
         key={paramKey}
         label={label}
-        value={String(paramValue ?? "")}
+        value={String(currentValue ?? "")}
         onChange={v => handleParamChange(paramKey, v)}
       />
     )
@@ -299,9 +505,9 @@ const NodePanel = () => {                                         // 节点面�
         <span className="panel-title">{nodeName} 属性</span>
       </div>
       <div className="panel-content">
-        {Object.entries(params).map(([key, value]) =>             // 遍历所有参数（registry格式：简单键值对）
-          renderParamEditor(key, value)                           // 渲染参数编辑器
-        )}
+        {Object.entries(nodeParams).map(([key, config]) => {     // 遍历所有参数配置（新格式：每个参数是对象）
+          return renderParamEditor(key, config)                          // 渲染参数编辑器
+        })}
       </div>
     </div>
   )
