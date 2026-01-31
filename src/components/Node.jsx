@@ -96,39 +96,44 @@ const startDragDetection = (event, edge, setEdges) => {                   // 开
 
 /**
  * InputPort - 输入端口组件
- * 
- * 用法：<InputPort name="输入" nodeId="node_1" edges={edges} setEdges={setEdges} />
+ *
+ * 用法：<InputPort id="x" label="输入1" nodeId="node_1" edges={edges} setEdges={setEdges} />
  * 功能：渲染输入端口，处理拖拽断线重连
  */
-const InputPort = ({ name, nodeId, edges, setEdges }) => {                // 输入端口组件
+const InputPort = ({ id, label, nodeId, edges, setEdges }) => {          // 输入端口组件
 
   const onMouseDown = (e) => {                                            // 鼠标按下处理
-    const edge = findConnectedEdge(edges, nodeId, name)                   // 查找连接的边
+    const edge = findConnectedEdge(edges, nodeId, id)                     // 查找连接的边（使用id而不是name）
     if (!edge) return                                                     // 无连接则返回
     e.stopPropagation()                                                   // 阻止冒泡
     startDragDetection(e, edge, setEdges)                                 // 开始拖拽检测
   }
 
+  const displayLabel = label || id                                        // 显示标签（优先使用label，否则使用id）
+
   return (
     <div className="port-item">
-      <Handle type="target" position={Position.Left} id={name} className="handle" onMouseDown={onMouseDown} />
-      <span className="input-label">{name}</span>
+      <Handle type="target" position={Position.Left} id={id} className="handle" onMouseDown={onMouseDown} />
+      <span className="input-label">{displayLabel}</span>
     </div>
   )
 }
 
 /**
  * OutputPort - 输出端口组件
- * 
- * 用法：<OutputPort name="输出" />
+ *
+ * 用法：<OutputPort id="out" label="输出" />
  * 功能：渲染输出端口
  */
-const OutputPort = ({ name }) => (                                        // 输出端口组件
-  <div className="port-item">
-    <span className="output-label">{name}</span>
-    <Handle type="source" position={Position.Right} id={name} className="handle" />
-  </div>
-)
+const OutputPort = ({ id, label }) => {                                   // 输出端口组件
+  const displayLabel = label || id                                        // 显示标签（优先使用label，否则使用id）
+  return (
+    <div className="port-item">
+      <span className="output-label">{displayLabel}</span>
+      <Handle type="source" position={Position.Right} id={id} className="handle" />
+    </div>
+  )
+}
 
 // ==================== 节点主组件 ====================
 
@@ -146,8 +151,19 @@ const Node = ({ id, data }) => {                                          // 节
 
   const color = data?.color || "rgb(137, 146, 235)"                       // 节点颜色
   const label = data?.name || data?.label || "未命名节点"                   // 节点名称
-  const inputs = data?.ports?.in || []                                    // 输入端口
-  const outputs = data?.ports?.out || []                                  // 输出端口
+
+  // 适配新旧两种格式的端口数据
+  const inputPorts = data?.ports?.input || data?.ports?.in || {}          // 输入端口（新格式是对象，旧格式是数组）
+  const outputPorts = data?.ports?.output || data?.ports?.out || {}       // 输出端口（新格式是对象，旧格式是数组）
+
+  // 将端口数据统一转换为数组格式 [{ id: "x", label: "输入1" }, ...]
+  const inputs = Array.isArray(inputPorts)                                // 判断是否为数组（旧格式）
+    ? inputPorts.map(name => ({ id: name, label: name }))                 // 旧格式：数组转对象数组
+    : Object.entries(inputPorts).map(([id, label]) => ({ id, label }))   // 新格式：对象转对象数组
+
+  const outputs = Array.isArray(outputPorts)                              // 判断是否为数组（旧格式）
+    ? outputPorts.map(name => ({ id: name, label: name }))                // 旧格式：数组转对象数组
+    : Object.entries(outputPorts).map(([id, label]) => ({ id, label }))  // 新格式：对象转对象数组
 
   // ===== 事件处理 =====
 
@@ -205,8 +221,8 @@ const Node = ({ id, data }) => {                                          // 节
     >
       {/* 输入端口组 */}
       <div className="port-container">
-        {inputs.map((name, i) => (
-          <InputPort key={`in-${i}`} name={name} nodeId={id} edges={edges} setEdges={setEdges} />
+        {inputs.map((port, i) => (
+          <InputPort key={`in-${port.id}-${i}`} id={port.id} label={port.label} nodeId={id} edges={edges} setEdges={setEdges} />
         ))}
       </div>
 
@@ -217,8 +233,8 @@ const Node = ({ id, data }) => {                                          // 节
 
       {/* 输出端口组 */}
       <div className="port-container">
-        {outputs.map((name, i) => (
-          <OutputPort key={`out-${i}`} name={name} />
+        {outputs.map((port, i) => (
+          <OutputPort key={`out-${port.id}-${i}`} id={port.id} label={port.label} />
         ))}
       </div>
     </div>
