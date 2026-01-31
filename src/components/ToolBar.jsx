@@ -42,10 +42,15 @@ import "../styles/ToolBar.css"                                    // 导入工�
  *   title - 鼠标悬停提示
  *   onClick - 点击回调函数
  */
-const ToolBarButton = ({ icon, alt, title, onClick }) => {        // 工具栏按钮组件，接收icon、alt、title、onClick四个参数
+const ToolBarButton = ({ icon, alt, title, onClick, disabled }) => { // 工具栏按钮组件，接收icon、alt、title、onClick、disabled五个参数
   return (                                                        // 返回按钮JSX结构
-    <button className="toolbar-btn" title={title} onClick={onClick}>
-      <img src={icon} alt={alt} />                                
+    <button
+      className="toolbar-btn"
+      title={title}
+      onClick={onClick}
+      disabled={disabled}                                         // 设置按钮禁用状态
+    >
+      <img src={icon} alt={alt} />
     </button>
   )
 }
@@ -69,7 +74,13 @@ const ToolBarButton = ({ icon, alt, title, onClick }) => {        // 工具栏�
 const ToolBar = () => {                                           // 工具栏主组件
 
   const zoom = useStore(s => s.viewport.zoom)                     // 从store获取当前缩放比例
+  const historyIndex = useStore(s => s.historyIndex)              // 从store获取当前历史索引
+  const historyLength = useStore(s => s.history.length)           // 从store获取历史记录总数
+
   const zoomPercent = Math.round(zoom * 100)                      // 计算缩放百分比
+
+  const canUndo = historyIndex > 0                                // 判断是否可以撤销：索引大于0
+  const canRedo = historyIndex < historyLength - 1                // 判断是否可以重做：索引小于最大索引
 
   // ========== 按钮点击处理 ==========
 
@@ -100,26 +111,28 @@ const ToolBar = () => {                                           // 工具栏�
   // ========== 渲染工具栏 ==========
 
   return (                                                        // 返回工具栏JSX结构
-    <div className="toolbar">                                     
+    <div className="toolbar">
 
       {/* 历史操作组 - 撤销和反撤销 */}
-      <div className="toolbar-group">                             
+      <div className="toolbar-group">
         <ToolBarButton                                            // 撤销按钮
           icon={undoIcon}                                         // 撤销图标
           alt="撤销"                                               // 图片描述
           title="撤销 (Ctrl+Z)"                                    // 悬停提示
           onClick={handleUndo}                                    // 点击回调
+          disabled={!canUndo}                                     // 根据canUndo状态禁用按钮
         />
         <ToolBarButton                                            // 反撤销按钮
           icon={redoIcon}                                         // 重做图标
           alt="重做"                                               // 图片描述
           title="重做 (Ctrl+Y)"                                    // 悬停提示
           onClick={handleRedo}                                    // 点击回调
+          disabled={!canRedo}                                     // 根据canRedo状态禁用按钮
         />
       </div>
 
       {/* 缩放控制组 - 缩小、缩放显示、放大 */}
-      <div className="toolbar-group">                             
+      <div className="toolbar-group">
         <ToolBarButton                                            // 缩小按钮
           icon={zoomOutIcon}                                      // 缩小图标
           alt="缩小"                                               // 图片描述
@@ -131,7 +144,7 @@ const ToolBar = () => {                                           // 工具栏�
           title="点击重置视图"                                      // 悬停提示：点击重置缩放
           onClick={handleResetZoom}                               // 点击回调：重置缩放
         >
-          {`${zoomPercent}%`}                                     
+          {`${zoomPercent}%`}
         </span>
         <ToolBarButton                                            // 放大按钮
           icon={zoomInIcon}                                       // 放大图标

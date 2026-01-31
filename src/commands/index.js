@@ -70,6 +70,9 @@ import {                                                            // 从Clipbo
   clearClipboard                                                   // 清空剪贴板
 } from './Clipboard'
 
+// ========== 导入自动记录功能 ==========
+import { initAutoRecord } from './AutoRecord'                       // 导入自动记录初始化函数
+
 // ========== 创建命令对象 ==========
 const cmd = {                                                       // 创建包含所有命令的对象
 
@@ -122,6 +125,12 @@ const cmd = {                                                       // 创建包
 
 // ========== 挂载到window ==========
 window.cmd = cmd                                                    // 将命令对象挂载到window上，实现全局访问
+
+// ========== 初始化历史记录 ==========
+record('初始状态')                                                   // 记录初始状态，确保第一次操作后可以撤销
+
+// ========== 初始化自动记录 ==========
+initAutoRecord()                                                    // 启用基于鼠标事件的自动历史记录
 
 // ========== 导出命令对象 ==========
 export default cmd                                                  // 默认导出命令对象，支持import方式使用

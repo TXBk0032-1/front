@@ -33,6 +33,7 @@ const MAX_HISTORY = 50                                              // 最大历
  */
 export function record(description = '') {
   const { nodes, edges, history, historyIndex } = getState()        // 获取当前状态
+  console.log(`[History] Recording: ${description}. Current Index: ${historyIndex}, History Length: ${history.length}`); // 打印记录日志
 
   const snapshot = {                                                // 创建状态快照
     nodes: JSON.parse(JSON.stringify(nodes)),                      // 深拷贝节点数据
@@ -65,6 +66,7 @@ export function record(description = '') {
  */
 export function undo() {
   const { history, historyIndex } = getState()                      // 获取历史记录和当前索引
+  console.log(`[History] Undo attempt. Current Index: ${historyIndex}`); // 打印撤销尝试日志
 
   if (historyIndex <= 0) {                                          // 如果已经是最早的状态
     console.log('undo: 已经是最早的状态，无法撤销')                  // 输出提示
@@ -98,6 +100,7 @@ export function undo() {
  */
 export function redo() {
   const { history, historyIndex } = getState()                      // 获取历史记录和当前索引
+  console.log(`[History] Redo attempt. Current Index: ${historyIndex}, History Length: ${history.length}`); // 打印重做尝试日志
 
   if (historyIndex >= history.length - 1) {                         // 如果已经是最新的状态
     console.log('redo: 已经是最新的状态，无法重做')                  // 输出提示

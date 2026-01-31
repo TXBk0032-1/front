@@ -123,11 +123,11 @@ export function deleteEdge(idOrPortOrIds) {
     const newEdges = edges.filter(e => {                           // 过滤连接线，使用ReactFlow格式字段
       if (type === 'output' || type === 'from') {                  // 如果指定是输出端口
         return !(e.source === nodeId &&                            // 检查起始端口，source是起始节点ID
-                 e.sourceHandle === portName)                      // sourceHandle是起始端口名
+          e.sourceHandle === portName)                      // sourceHandle是起始端口名
       }
       if (type === 'input' || type === 'to') {                     // 如果指定是输入端口
         return !(e.target === nodeId &&                            // 检查目标端口，target是目标节点ID
-                 e.targetHandle === portName)                      // targetHandle是目标端口名
+          e.targetHandle === portName)                      // targetHandle是目标端口名
       }
       return !(                                                    // 如果没指定类型，检查两端
         (e.source === nodeId && e.sourceHandle === portName) ||    // 检查是否为起始端口
