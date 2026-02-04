@@ -1,75 +1,62 @@
 /**
  * AutoRecord.js - 自动历史记录
- * 
+ *
  * 用法说明：
- *   import { initAutoRecord } from './commands/AutoRecord'
- *   
+ *   import { initAutoRecord, checkAndRecord } from './commands/AutoRecord'
+ *
  *   // 在应用初始化时调用
  *   initAutoRecord()
- * 
+ *
+ *   // 在特定事件中手动调用
+ *   checkAndRecord()  // 例如在拖拽结束时
+ *
  * 核心职责：
- *   监听鼠标操作，在操作完成后自动记录历史
+ *   监听鼠标操作和拖拽事件，在操作完成后自动记录历史
  *   避免频繁操作（如拖拽）导致历史记录爆满
- * 
+ *
  * 工作原理：
- *   1. 鼠标按下时：保存当前状态快照
- *   2. 鼠标松开时：对比状态是否变化
- *   3. 如果变化：自动调用record()记录历史
+ *   对比当前状态和历史记录当前项，如果不同则记录
+ *   撤销/重做后状态等于历史记录，自动跳过不记录
  */
 
 import { getState } from '../store'                                 // 导入状态获取函数
 import { record } from './History'                                  // 导入历史记录函数
 
-let snapshotBeforeAction = null                                     // 保存操作前的状态快照
-
 /**
- * captureSnapshot - 捕获当前状态快照
- * 
+ * checkAndRecord - 检查状态变化并记录
+ *
  * 用法示例：
- *   captureSnapshot()                                             // 保存当前nodes和edges的快照
- * 
- * @returns {Object} - 返回状态快照对象
- */
-function captureSnapshot() {
-    const { nodes, edges } = getState()                               // 获取当前节点和连接线
-
-    return {                                                          // 返回快照对象
-        nodes: JSON.stringify(nodes),                                  // 序列化节点数据用于对比
-        edges: JSON.stringify(edges)                                   // 序列化连接线数据用于对比
-    }
-}
-
-/**
- * hasStateChanged - 检查状态是否发生变化
- * 
- * 用法示例：
- *   if (hasStateChanged(snapshot)) { record() }                   // 状态变化时记录
- * 
- * @param {Object} snapshot - 之前保存的快照
- * @returns {boolean} - 状态是否发生变化
- */
-function hasStateChanged(snapshot) {
-    if (!snapshot) return false                                       // 如果没有快照，返回false
-
-    const currentSnapshot = captureSnapshot()                         // 获取当前状态快照
-
-    const nodesChanged = currentSnapshot.nodes !== snapshot.nodes     // 检查节点是否变化
-    const edgesChanged = currentSnapshot.edges !== snapshot.edges     // 检查连接线是否变化
-
-    return nodesChanged || edgesChanged                               // 任一变化即返回true
-}
-
-/**
- * handleMouseDown - 处理鼠标按下事件
- * 
- * 用法示例：
- *   document.addEventListener('mousedown', handleMouseDown)
- * 
+ *   checkAndRecord()                                              // 检查并记录
+ *   checkAndRecord('拖拽结束')                                     // 带描述的记录
+ *
  * 功能说明：
- *   在鼠标按下时保存当前状态快照，用于后续对比
+ *   对比当前状态和历史记录当前项，如果不同则自动记录
+ *   如果相同（如撤销/重做后），则自动跳过
+ *
+ * @param {string} description - 操作描述，可选
  */
-function handleMouseDown() {
-    snapshotBeforeAction = captureSnapshot()                          // 保存操作前的状态快照
+export function checkAndRecord(description = '操作完成') {
+  const { nodes, edges, history, historyIndex } = getState()        // 获取当前状态和历史记录
+
+  const currentSnapshot = history[historyIndex]                     // 获取历史记录当前项
+
+  if (!currentSnapshot) {                                           // 如果没有历史记录
+    record(description)                                             // 直接记录
+    return                                                          // 返回
+  }
+
+  const currentNodesStr = JSON.stringify(nodes)                     // 序列化当前节点
+  const currentEdgesStr = JSON.stringify(edges)                     // 序列化当前连接线
+
+  const historyNodesStr = JSON.stringify(currentSnapshot.nodes)     // 序列化历史节点
+  const historyEdgesStr = JSON.stringify(currentSnapshot.edges)     // 序列化历史连接线
+
+  const nodesChanged = currentNodesStr !== historyNodesStr          // 检查节点是否变化
+  const edgesChanged = currentEdgesStr !== historyEdgesStr          // 检查连接线是否变化
+
+  if (nodesChanged || edgesChanged) {                               // 如果有任何变化
+    record(description)                                             // 自动记录历史
+  }
 }
 
 /**
@@ -79,16 +66,10 @@ function handleMouseDown() {
  *   document.addEventListener('mouseup', handleMouseUp)
  * 
  * 功能说明：
- *   在鼠标松开时检查状态是否变化，如果变化则自动记录历史
+ *   在鼠标松开时检查状态并记录
  */
 function handleMouseUp() {
-    if (!snapshotBeforeAction) return                                 // 如果没有快照，直接返回
-
-    if (hasStateChanged(snapshotBeforeAction)) {                      // 检查状态是否变化
-        record('操作完成')                                               // 自动记录历史
-    }
-
-    snapshotBeforeAction = null                                       // 清空快照
+  checkAndRecord('鼠标操作')                                         // 调用统一的检查记录函数
 }
 
 /**
@@ -101,10 +82,9 @@ function handleMouseUp() {
  *   添加全局鼠标事件监听器，实现自动历史记录
  */
 export function initAutoRecord() {
-    document.addEventListener('mousedown', handleMouseDown)           // 监听鼠标按下事件
-    document.addEventListener('mouseup', handleMouseUp)               // 监听鼠标松开事件
+  document.addEventListener('mouseup', handleMouseUp)               // 监听鼠标松开事件
 
-    console.log('[AutoRecord] 自动历史记录已启用')                    // 输出日志
+  console.log('[AutoRecord] 自动历史记录已启用')                    // 输出日志
 }
 
 /**
@@ -117,10 +97,7 @@ export function initAutoRecord() {
  *   移除全局事件监听器，清理资源
  */
 export function destroyAutoRecord() {
-    document.removeEventListener('mousedown', handleMouseDown)        // 移除鼠标按下监听
-    document.removeEventListener('mouseup', handleMouseUp)            // 移除鼠标松开监听
+  document.removeEventListener('mouseup', handleMouseUp)            // 移除鼠标松开监听
 
-    snapshotBeforeAction = null                                       // 清空快照
-
-    console.log('[AutoRecord] 自动历史记录已禁用')                    // 输出日志
+  console.log('[AutoRecord] 自动历史记录已禁用')                    // 输出日志
 }

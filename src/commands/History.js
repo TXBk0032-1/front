@@ -1,18 +1,18 @@
 /**
  * History.js - 历史记录命令
- * 
+ *
  * 用法说明：
  *   import { record, undo, redo } from './commands/History'
- *   
+ *
  *   // 记录当前状态
  *   record()
- *   
+ *
  *   // 撤销
  *   undo()
- *   
+ *
  *   // 重做
  *   redo()
- * 
+ *
  * 核心职责：
  *   提供历史记录相关的所有命令，包括记录、撤销、重做
  *   用于支持撤销/重做操作
