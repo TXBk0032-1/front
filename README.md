@@ -1167,8 +1167,8 @@ useEffect(() => {
 ### 安装依赖
 
 ```bash
-# 使用yarn（推荐）
-yarn install
+# 使用bun（推荐）
+bun install
 
 # 或使用npm
 npm install
@@ -1177,8 +1177,8 @@ npm install
 ### 启动开发服务器
 
 ```bash
-# 使用yarn
-yarn dev
+# 使用bun
+bun dev
 
 # 或使用npm
 npm run dev
@@ -1189,8 +1189,8 @@ npm run dev
 ### 构建生产版本
 
 ```bash
-# 使用yarn
-yarn build
+# 使用bun
+bun build
 
 # 或使用npm
 npm run build
