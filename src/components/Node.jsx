@@ -19,7 +19,7 @@
  * 端口交互逻辑（开发目标.txt第63-69行）：
  *   - 拖拽已连接的输入端口：断开连接，从源端口重新拖拽
  */
-
+import { Button } from "@heroui/react";
 import { Handle, Position, useEdges, useReactFlow } from "@xyflow/react"  // ReactFlow组件和hooks
 import { setState, getState } from "../store"                             // 状态管理
 import "../styles/Node.css"                                               // 样式
@@ -212,32 +212,32 @@ const Node = ({ id, data }) => {                                          // 节
   // ===== 渲染 =====
 
   return (
-    <div
-      className="container"
-      style={{ background: color, "--node-color": color }}
-      onClick={onClick}
-      onDoubleClick={onDoubleClick}
-      onContextMenu={onContextMenu}
-    >
-      {/* 输入端口组 */}
-      <div className="port-container">
-        {inputs.map((port, i) => (
-          <InputPort key={`in-${port.id}-${i}`} id={port.id} label={port.label} nodeId={id} edges={edges} setEdges={setEdges} />
-        ))}
-      </div>
+      <Button
+        className="container"
+        style={{ background: color, "--node-color": color }}
+        onClick={onClick}
+        onDoubleClick={onDoubleClick}
+        onContextMenu={onContextMenu}
+      >
+        {/* 输入端口组 */}
+        <div className="port-container">
+          {inputs.map((port, i) => (
+            <InputPort key={`in-${port.id}-${i}`} id={port.id} label={port.label} nodeId={id} edges={edges} setEdges={setEdges} />
+          ))}
+        </div>
 
-      {/* 节点名称 */}
-      <div className="title-container">
-        <div className="title">{label}</div>
-      </div>
+        {/* 节点名称 */}
+        <div className="title-container">
+          <div className="title">{label}</div>
+        </div>
 
-      {/* 输出端口组 */}
-      <div className="port-container">
-        {outputs.map((port, i) => (
-          <OutputPort key={`out-${port.id}-${i}`} id={port.id} label={port.label} />
-        ))}
-      </div>
-    </div>
+        {/* 输出端口组 */}
+        <div className="port-container">
+          {outputs.map((port, i) => (
+            <OutputPort key={`out-${port.id}-${i}`} id={port.id} label={port.label} />
+          ))}
+        </div>
+      </Button>
   )
 }
 

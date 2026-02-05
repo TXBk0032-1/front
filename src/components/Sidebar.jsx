@@ -21,8 +21,8 @@
 import '../styles/SideBar.css'                                      // 导入侧边栏样式
 import { useStore, setState } from '../store'                       // 导入store相关函数
 import { useEffect } from 'react'
-import ws from '../ws'  
-
+import ws from '../ws'
+import { Button, Tooltip } from "@heroui/react";
 /**
  * CategoryItem - 分类项组件
  * 
@@ -77,7 +77,7 @@ function CategoryBar() {
       <CategoryItem                                                 /* 全部分类项 */
         category="all"                                              /* 分类键名 */
         label="全部"                                                /* 显示名称 */
-        color="#666"                                                /* 颜色 */
+        color="#8b92e5"                                                /* 颜色 */
       />
 
       {categories.map(cat => (                                      /* 遍历所有分类 */
@@ -111,7 +111,7 @@ function getCategoriesFromRegistry(registry) {
   return Object.entries(categories).map(([key, cat]) => ({          // 遍历分类对象，转换格式
     key: key,                                                       // 分类键名
     label: cat.label || key,                                        // 分类显示名称
-    color: cat.color || '#666666'                                   // 分类颜色
+    color: cat.color || '#8b92e5'                                   // 分类颜色
   }))
 }
 
@@ -138,14 +138,21 @@ function NodeItem({ node, color }) {
   }
 
   return (                                                          // 返回节点项元素
-    <div                                                            /* 节点项容器 */
-      className="node-item"                                         /* 样式类名 */
-      style={{ '--node-color': color }}                             /* 内联样式，传入颜色变量 */
-      draggable                                                     /* 允许拖拽 */
-      onDragStart={handleDragStart}                                 /* 绑定拖拽开始事件 */
-    >
-      {node.label || node.opcode}                                   {/* 显示节点标签或opcode */}
-    </div>
+    <Tooltip delay={1000} closeDelay={200}>
+      <Tooltip.Trigger>
+        <div                                                            /* 节点项容器 */
+          className="node-item"                                         /* 样式类名 */
+          style={{ '--node-color': color }}                             /* 内联样式，传入颜色变量 */
+          draggable                                                     /* 允许拖拽 */
+          onDragStart={handleDragStart}                                 /* 绑定拖拽开始事件 */
+        >
+          {node.label || node.opcode}                                   {/* 显示节点标签或opcode */}
+        </div>
+        </Tooltip.Trigger>
+      <Tooltip.Content placement="right">
+        <p>{node.tip || node.description || node.desc || "无描述"}</p>
+      </Tooltip.Content>
+    </Tooltip>
   )
 }
 
@@ -242,7 +249,7 @@ function getGroupedNodes(registry, selectedCategory) {
     categoryMap.set(catId, {                                        // 以id为键存储分类信息
       id: catId,                                                    // 分类id
       label: catData.label || catId,                                // 分类名称
-      color: catData.color || '#666666',                            // 分类颜色
+      color: catData.color || '#8b92e5',                            // 分类颜色
       nodes: []                                                     // 该分类的节点数组（待填充）
     })
 
@@ -257,7 +264,7 @@ function getGroupedNodes(registry, selectedCategory) {
   categoryMap.set('', {                                             // 添加默认分类（空字符串）
     id: '',                                                         // 分类id
     label: '未分类',                                                // 分类名称
-    color: '#666666',                                               // 分类颜色
+    color: '#8b92e5',                                               // 分类颜色
     nodes: []                                                       // 该分类的节点数组
   })
 
