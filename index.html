@@ -1,13 +1,161 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>编辑器·炼丹蓝图</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>编辑器·炼丹蓝图</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <noscript>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .noscript-message {
+        text-align: center;
+        padding: 40px;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%);
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(255, 182, 193, 0.4);
+        max-width: 700px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .noscript-message .warning-icon {
+        font-size: 48px;
+        color: #ff6348;
+        animation: pulse 1s infinite;
+      }
+
+      .noscript-message .gradient-text {
+        background: linear-gradient(45deg, #ff6b6b, #ff8787);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 36px;
+        font-weight: bold;
+        display: inline-block;
+      }
+
+      .noscript-message .shaking-text {
+        font-size: 36px;
+        color: #ff4757;
+        animation: shake 0.5s infinite;
+        display: inline-block;
+      }
+
+      .noscript-message .bouncing-text {
+        font-size: 40px;
+        color: #ff6348;
+        animation: shake 1s infinite;
+        display: inline-block;
+      }
+
+      .noscript-message .normal-text {
+        font-size: 28px;
+        color: #ff6348;
+      }
+
+      .noscript-message .emphasized-text {
+        font-size: 32px;
+        color: #ff4757;
+        font-weight: 900;
+      }
+
+      @keyframes pulse {
+
+        0%,
+        100% {
+          transform: scale(1);
+        }
+
+        50% {
+          transform: scale(1.1);
+        }
+      }
+
+      @keyframes shake {
+
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+
+        25% {
+          transform: translateX(-5px);
+        }
+
+        75% {
+          transform: translateX(5px);
+        }
+      }
+
+      @keyframes bounce {
+
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+
+        50% {
+          transform: translateY(-20px);
+        }
+      }
+
+      @media (max-width: 600px) {
+        .noscript-message {
+          padding: 20px;
+        }
+
+        .noscript-message .gradient-text {
+          font-size: 24px;
+        }
+
+        .noscript-message .shaking-text {
+          font-size: 28px;
+        }
+
+        .noscript-message .bouncing-text {
+          font-size: 32px;
+        }
+
+        .noscript-message .normal-text {
+          font-size: 20px;
+        }
+
+        .noscript-message .emphasized-text {
+          font-size: 24px;
+        }
+      }
+    </style>
+    <div class="noscript-message">
+      <span class="warning-icon">⚠️</span>
+      <br><br>
+      <span class="gradient-text">真是的！炼丹蓝图</span>
+      <br>
+      <span class="shaking-text">没有JavaScript就完全动不了啦！</span>
+      <br><br>
+      <span class="normal-text">你这家伙快点把JavaScript打开啊！</span>
+      <br>
+      <span class="emphasized-text">再不开人家就要、就要...总之快点啦！</span>
+      <br>
+      <span class="bouncing-text">笨蛋！</span>
+    </div>
+  </noscript>
+</body>
+
 </html>
