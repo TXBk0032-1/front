@@ -33,19 +33,34 @@ import { arrangeNodes } from '../utils/layout'                      // 导入节
  * @param {Object} options - 配置选项，可选
  */
 export function arrange(options = {}) {
-  const { nodes, edges } = getState()                               // 获取当前所有节点和连接线
-  
-  if (nodes.length === 0) return                                    // 如果没有节点，直接返回
+  try {
+    const state = getState()                                      // 获取当前状态
+    const { nodes, edges } = state                                // 获取节点和边
 
-  const newPositions = arrangeNodes(nodes, edges, options)          // 计算新的节点位置
+    if (!nodes || nodes.length === 0) {                           // 检查是否有节点
+      console.log('没有节点需要整理')                              // 输出提示
+      return
+    }
 
-  const updatedNodes = nodes.map(node => {                          // 遍历所有节点，更新位置
-    const newPos = newPositions.find(p => p.id === node.id)        // 找到该节点的新位置
-    if (!newPos) return node                                       // 如果没找到，保持原样
-    return { ...node, x: newPos.x, y: newPos.y }                   // 返回更新位置后的节点
-  })
+    const newPositions = arrangeNodes(nodes, edges, options)               // 调用整理工具计算新位置
 
-  setState({ nodes: updatedNodes })                                 // 更新store中的节点数据
+    // 更新节点位置
+    const updatedNodes = nodes.map(node => {                      // 遍历所有节点
+      const newPos = newPositions.find(p => p.id === node.id)    // 查找新位置
+      if (newPos) {                                               // 如果找到新位置
+        return {                                                  // 返回更新后的节点
+          ...node,
+          position: { x: newPos.x, y: newPos.y }
+        }
+      }
+      return node                                                 // 否则返回原节点
+    })
+
+    setState({ nodes: updatedNodes })                            // 更新store中的节点
+    console.log('节点整理完成')                                   // 输出成功提示
+  } catch (err) {
+    console.error('整理节点失败:', err.message)                   // 输出错误信息
+  }
 }
 
 /**
