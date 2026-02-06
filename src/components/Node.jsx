@@ -160,6 +160,7 @@ const Node = ({ id, data }) => {
 	const { setEdges } = useReactFlow(); // 获取setEdges
 
 	const color = data?.color || "rgb(137, 146, 235)"; // 节点颜色
+	
 	const label = data?.name || data?.label || "未命名节点"; // 节点名称
 
 	// 适配新旧两种格式的端口数据

@@ -32,6 +32,26 @@ import { getState, setState } from '../store'                       // 导入状
 import { generateNodeId } from '../utils/generateId'                // 导入节点ID生成函数
 
 /**
+ * findCategory - 通过opcode查找所属分类名和分类定义
+ *
+ * 用法示例：
+ *   const { name, def } = findCategory(registry, 'input')          // 返回 { name: 'basic', def: { label: '基础', color: '#8B92E5', ... } }
+ *   const { name, def } = findCategory(registry, 'unknown_node')   // 找不到时返回 { name: null, def: null }
+ *   const color = findCategory(registry, 'input').def?.color        // 直接获取分类颜色
+ *
+ * @param {Object} registry - 节点注册表，包含categories和nodes
+ * @param {string} opcode - 节点的opcode
+ * @returns {{ name: string|null, def: Object|null }} - 分类名和分类定义对象
+ */
+function findCategory(registry, opcode) {
+  const categories = registry?.categories || {}                      // 获取分类对象，防空
+  const entries = Object.entries(categories)                         // 转为 [分类名, 分类定义] 的数组，方便遍历同时拿到key和value
+  const found = entries.find(([, cat]) => cat.nodes?.includes(opcode))  // 找到nodes数组中包含该opcode的分类
+  if (!found) return { name: null, def: null }                       // 找不到则返回空
+  return { name: found[0], def: found[1] }                           // 返回分类名和分类定义对象
+}
+
+/**
  * selectNode - 选中节点
  * 
  * 用法示例：
@@ -141,7 +161,7 @@ export function createNode(opcodeOrConfig, options = {}) {
     })
   }
 
-  const categoryDef = registry?.categories?.[nodeDef.category]      // 从registry.categories获取分类定义，用于获取分类颜色
+  const { name: categoryName, def: categoryDef } = findCategory(registry, opcode)  // 通过opcode查找所属分类名和分类定义
 
   const newNode = {                                                 // 创建新节点对象，格式需要兼容ReactFlow
     id: nodeId,                                                    // 节点ID，ReactFlow必需
@@ -152,7 +172,7 @@ export function createNode(opcodeOrConfig, options = {}) {
       name: name || nodeDef.label || opcode,                       // 节点显示名称，registry中用label字段
       params: { ...defaultParams, ...params },                     // 合并默认参数和传入参数
       ports: nodeDef.ports || { in: [], out: [] },                 // 端口定义，registry中格式是 { in: [], out: [] }
-      category: nodeDef.category,                                  // 节点分类
+      category: categoryName,                                      // 节点分类名，通过findCategory从registry.categories中反查得到
       color: categoryDef?.color || '#8B92E5'                       // 节点颜色，从分类定义中获取
     }
   }
