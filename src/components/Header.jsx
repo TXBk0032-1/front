@@ -12,6 +12,7 @@
  *       运行
  *       导入
  *       导出
+ *       整理节点
  * 
  * 核心职责：
  *   展示Logo、蓝图名称输入框和功能按钮
@@ -19,8 +20,9 @@
  */
 
 import '../styles/Header.css'                                       // 导入顶部栏样式
-import { useStore, setState } from '../store'                       // 导入store相关函数
+import { useStore, getState, setState } from '../store'             // 导入store相关函数
 import { importBlueprint, exportBlueprint } from '../commands/Blueprint' // 导入蓝图命令
+import { arrangeNodes } from '../utils/layout'                      // 导入节点整理工具
 import ws from '../ws'                                              // 导入WebSocket管理器
 
 /**
@@ -141,6 +143,42 @@ function ActionButtons() {
     console.log('导出成功')                                         // 输出成功提示
   }
 
+  /**
+   * handleArrange - 整理节点按钮点击事件
+   * 
+   * 使用layout工具自动整理节点布局
+   */
+  const handleArrange = () => {                                     // 整理节点按钮点击处理
+    try {
+      const state = getState()                                      // 获取当前状态
+      const { nodes, edges } = state                                // 获取节点和边
+
+      if (!nodes || nodes.length === 0) {                           // 检查是否有节点
+        console.log('没有节点需要整理')                              // 输出提示
+        return
+      }
+
+      const newPositions = arrangeNodes(nodes, edges)               // 调用整理工具计算新位置
+
+      // 更新节点位置
+      const updatedNodes = nodes.map(node => {                      // 遍历所有节点
+        const newPos = newPositions.find(p => p.id === node.id)    // 查找新位置
+        if (newPos) {                                               // 如果找到新位置
+          return {                                                  // 返回更新后的节点
+            ...node,
+            position: { x: newPos.x, y: newPos.y }
+          }
+        }
+        return node                                                 // 否则返回原节点
+      })
+
+      setState({ nodes: updatedNodes })                            // 更新store中的节点
+      console.log('节点整理完成')                                   // 输出成功提示
+    } catch (err) {
+      console.error('整理节点失败:', err.message)                   // 输出错误信息
+    }
+  }
+
   return (                                                          // 返回按钮组元素
     <>
 
@@ -158,6 +196,11 @@ function ActionButtons() {
         className="btn btn-export"                                  /* 样式类名 */
         onClick={handleExport}                                      /* 绑定点击事件 */
       >导出</button>
+
+      <button                                                       /* 整理节点按钮 */
+        className="btn btn-arrange"                                 /* 样式类名 */
+        onClick={handleArrange}                                     /* 绑定点击事件 */
+      >整理节点</button>
     </>
   )
 }
