@@ -34,7 +34,7 @@
   border-radius: 8px;
   position: relative;
   transition: all 0.1s ease-in-out;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--category-text-color);
 }
