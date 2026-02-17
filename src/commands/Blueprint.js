@@ -152,7 +152,7 @@ export function importBlueprint(data) {
     nodes,                                                         // 更新节点
     edges,                                                         // 更新连接线
     blueprintName: name,                                           // 更新蓝图名称
-    selectedIds: [],                                               // 清空选择
+                                                                     // 选中状态已在nodes的selected字段中管理
     viewport: { x: 0, y: 0, zoom: 1 }                              // 重置视口
   })
 

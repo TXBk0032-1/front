@@ -34,12 +34,12 @@ import { generateNodeId, generateEdgeId } from '../utils/generateId' // 导入ID
  * @returns {boolean} - 是否成功复制
  */
 export function copy(nodeIdOrIds) {
-  const { nodes, edges, selectedIds } = getState()                  // 获取当前节点、连接线和选中列表
+  const { nodes, edges } = getState()                               // 获取当前节点和连接线
 
   let idsToCopy = []                                                // 要复制的节点ID列表
 
   if (nodeIdOrIds === undefined) {                                  // 如果没有传入参数
-    idsToCopy = selectedIds                                        // 使用当前选中的节点
+    idsToCopy = nodes.filter(n => n.selected).map(n => n.id)       // 从nodes中提取选中节点的ID
   } else if (Array.isArray(nodeIdOrIds)) {                          // 如果是数组
     idsToCopy = nodeIdOrIds                                        // 直接使用
   } else if (typeof nodeIdOrIds === 'string') {                     // 如果是单个ID
@@ -140,12 +140,16 @@ export function paste(options = {}) {
   const allNodes = [...nodes, ...newNodes]                          // 合并所有节点
   const allEdges = [...edges, ...newEdges]                          // 合并所有连接线
 
-  const newSelectedIds = newNodes.map(n => n.id)                    // 选中新粘贴的节点
+  const newIdSet = new Set(newNodes.map(n => n.id))                 // 新粘贴节点的ID集合
+
+  const allNodesWithSelect = allNodes.map(n => ({                   // 选中新粘贴的节点，取消其他节点选中
+    ...n,                                                          // 保留节点属性
+    selected: newIdSet.has(n.id)                                   // 新粘贴的节点设为选中
+  }))
 
   setState({                                                        // 更新状态
-    nodes: allNodes,                                               // 更新节点列表
-    edges: allEdges,                                               // 更新连接线列表
-    selectedIds: newSelectedIds                                    // 更新选中列表
+    nodes: allNodesWithSelect,                                     // 更新节点列表（含选中状态）
+    edges: allEdges                                                // 更新连接线列表
   })
 
   return { nodes: newNodes, edges: newEdges }                       // 返回粘贴的内容

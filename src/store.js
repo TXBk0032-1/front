@@ -30,7 +30,6 @@ export const useStore = create(                               // 创建全局状
     edges: [],                                                // 连接线数组，存储所有连接线数据
 
     // ========== 选择状态 ==========
-    selectedIds: [],                                          // 选中的节点id数组，支持多选
     selectedCategory: "all",                                  // 当前选中的分类，用于侧边栏节点列表过滤
 
     // ========== 视口状态 ==========
