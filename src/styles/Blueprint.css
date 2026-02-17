@@ -18,7 +18,7 @@
  * 导致右键无法穿透点击到节点，无法弹出右键菜单
  */
 .react-flow__nodesselection-rect {
-  display: none !important;
-  z-index: -1 !important;
+  pointer-events: none !important;                                  /* 允许右键穿透到节点 */
+  opacity: 0 !important;                                           /* 隐藏蓝色选区框，保留框选拖拽功能 */
 }
 
