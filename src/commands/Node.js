@@ -63,19 +63,20 @@ function findCategory(registry, opcode) {
  * @param {boolean} append - 是否追加选中，默认false会替换之前的选中
  */
 export function selectNode(nodeIdOrIds, append = false) {
-  const { selectedIds } = getState()                                // 获取当前选中的节点ID列表
+  const { nodes } = getState()                                         // 获取当前节点列表
 
-  const idsToAdd = Array.isArray(nodeIdOrIds)                       // 判断传入的是数组还是单个ID
-    ? nodeIdOrIds                                                  // 如果是数组，直接使用
-    : [nodeIdOrIds]                                                // 如果是单个ID，包装成数组
+  const idsToAdd = Array.isArray(nodeIdOrIds)                          // 判断传入的是数组还是单个ID
+    ? nodeIdOrIds                                                     // 如果是数组，直接使用
+    : [nodeIdOrIds]                                                   // 如果是单个ID，包装成数组
 
-  if (append) {                                                     // 如果是追加选中
-    const newIds = [...new Set([...selectedIds, ...idsToAdd])]     // 合并并去重
-    setState({ selectedIds: newIds })                              // 更新选中列表
-    return
-  }
+  const addSet = new Set(idsToAdd)                                     // 转为Set提高查找效率
 
-  setState({ selectedIds: idsToAdd })                               // 直接替换选中列表
+  const newNodes = nodes.map(n => ({                                   // 遍历所有节点设置selected
+    ...n,                                                             // 保留节点其他属性
+    selected: addSet.has(n.id) || (append && n.selected)              // 命中则选中，追加模式保留已选中的
+  }))
+
+  setState({ nodes: newNodes })                                        // 更新节点列表
 }
 
 /**
@@ -87,17 +88,14 @@ export function selectNode(nodeIdOrIds, append = false) {
  * @param {string} nodeId - 节点ID
  */
 export function toggleSelectNode(nodeId) {
-  const { selectedIds } = getState()                                // 获取当前选中的节点ID列表
+  const { nodes } = getState()                                         // 获取当前节点列表
 
-  const isSelected = selectedIds.includes(nodeId)                   // 检查该节点是否已选中
+  const newNodes = nodes.map(n => {                                    // 遍历所有节点
+    if (n.id !== nodeId) return n                                     // 不是目标节点，保持原样
+    return { ...n, selected: !n.selected }                            // 切换目标节点的选中状态
+  })
 
-  if (isSelected) {                                                 // 如果已选中
-    const newIds = selectedIds.filter(id => id !== nodeId)         // 从列表中移除
-    setState({ selectedIds: newIds })                              // 更新选中列表
-    return
-  }
-
-  setState({ selectedIds: [...selectedIds, nodeId] })               // 否则添加到选中列表
+  setState({ nodes: newNodes })                                        // 更新节点列表
 }
 
 /**
@@ -107,7 +105,11 @@ export function toggleSelectNode(nodeId) {
  *   clearSelect()                                                 // 清空所有选中
  */
 export function clearSelect() {
-  setState({ selectedIds: [] })                                     // 清空选中列表
+  const { nodes } = getState()                                         // 获取当前节点列表
+  const hasSelected = nodes.some(n => n.selected)                      // 检查是否有选中的节点
+  if (!hasSelected) return                                             // 没有选中的节点，跳过更新
+  const newNodes = nodes.map(n => n.selected ? { ...n, selected: false } : n)  // 取消所有节点的选中状态
+  setState({ nodes: newNodes })                                        // 更新节点列表
 }
 
 /**
@@ -192,28 +194,25 @@ export function createNode(opcodeOrConfig, options = {}) {
  * @param {string|Array} nodeIdOrIds - 节点ID或ID数组
  */
 export function deleteNode(nodeIdOrIds) {
-  const { nodes, edges, selectedIds } = getState()                  // 获取当前节点、连接线和选中列表
+  const { nodes, edges } = getState()                                  // 获取当前节点和连接线
 
-  const idsToDelete = Array.isArray(nodeIdOrIds)                    // 判断传入的是数组还是单个ID
-    ? nodeIdOrIds                                                  // 如果是数组，直接使用
-    : [nodeIdOrIds]                                                // 如果是单个ID，包装成数组
+  const idsToDelete = Array.isArray(nodeIdOrIds)                       // 判断传入的是数组还是单个ID
+    ? nodeIdOrIds                                                     // 如果是数组，直接使用
+    : [nodeIdOrIds]                                                   // 如果是单个ID，包装成数组
 
-  const idSet = new Set(idsToDelete)                                // 转换为Set，提高查找效率
+  const idSet = new Set(idsToDelete)                                   // 转换为Set，提高查找效率
 
-  const newNodes = nodes.filter(n => !idSet.has(n.id))              // 过滤掉要删除的节点
+  const newNodes = nodes.filter(n => !idSet.has(n.id))                 // 过滤掉要删除的节点
 
-  const newEdges = edges.filter(e => {                              // 过滤掉与被删除节点相关的连接线
-    const sourceId = e.source                                      // ReactFlow边的起始节点ID是source字段
-    const targetId = e.target                                      // ReactFlow边的目标节点ID是target字段
-    return !idSet.has(sourceId) && !idSet.has(targetId)            // 只保留两端都不在删除列表中的连接线
+  const newEdges = edges.filter(e => {                                 // 过滤掉与被删除节点相关的连接线
+    const sourceId = e.source                                         // ReactFlow边的起始节点ID是source字段
+    const targetId = e.target                                         // ReactFlow边的目标节点ID是target字段
+    return !idSet.has(sourceId) && !idSet.has(targetId)               // 只保留两端都不在删除列表中的连接线
   })
 
-  const newSelectedIds = selectedIds.filter(id => !idSet.has(id))   // 从选中列表中移除被删除的节点
-
-  setState({                                                        // 更新store状态
-    nodes: newNodes,                                               // 更新节点列表
-    edges: newEdges,                                               // 更新连接线列表
-    selectedIds: newSelectedIds                                    // 更新选中列表
+  setState({                                                           // 更新store状态
+    nodes: newNodes,                                                  // 更新节点列表
+    edges: newEdges,                                                  // 更新连接线列表
   })
 }
 
@@ -224,7 +223,8 @@ export function deleteNode(nodeIdOrIds) {
  *   deleteSelectedNodes()                                         // 删除当前选中的所有节点
  */
 export function deleteSelectedNodes() {
-  const { selectedIds } = getState()                                // 获取当前选中的节点ID列表
+  const { nodes } = getState()                                     // 获取当前节点列表
+  const selectedIds = nodes.filter(n => n.selected).map(n => n.id) // 从nodes中提取选中节点的ID
   if (selectedIds.length === 0) return                              // 如果没有选中节点，直接返回
   deleteNode(selectedIds)                                           // 删除选中的节点
 }
@@ -357,7 +357,6 @@ export function getNodeById(nodeId) {
  * @returns {Array} - 返回选中的节点数组
  */
 export function getSelectedNodes() {
-  const { nodes, selectedIds } = getState()                         // 获取节点列表和选中ID列表
-  const idSet = new Set(selectedIds)                                // 转换为Set，提高查找效率
-  return nodes.filter(n => idSet.has(n.id))                         // 返回选中的节点
+  const { nodes } = getState()                                      // 获取节点列表
+  return nodes.filter(n => n.selected)                              // 返回选中的节点
 }

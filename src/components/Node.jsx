@@ -178,22 +178,28 @@ const Node = ({ id, data }) => {
 
 	// ===== 事件处理 =====
 
+	const hideMenuIfNeeded = () => {
+		// 如果当前节点不是菜单/面板绑定的节点，就隐藏
+		const { nodeMenu, nodePanel } = getState();                    // 获取菜单和面板状态
+		if (id !== nodeMenu.nodeId && id !== nodePanel.nodeId) {       // 不是绑定节点
+			setState({ nodeMenu: { visible: false }, nodePanel: { visible: false } }); // 隐藏菜单和面板
+		}
+	};
+
 	const onClick = (e) => {
 		// 单击处理
 		e.stopPropagation(); // 阻止冒泡
 		const isCtrl = e.ctrlKey || e.metaKey; // 是否按Ctrl
 		if (isCtrl) {
-			window.cmd.toggleSelectNode(id); // 切换选中
+			window.cmd.toggleSelectNode(id); // Ctrl+点击切换选中
 		} else {
-			window.cmd.clearSelect(); // 清空选中
-			window.cmd.selectNode(id); // 选中当前
+			const node = getState().nodes.find(n => n.id === id);      // 获取当前节点
+			if (!node?.selected) {                                     // 未选中才清空重选，保护多选状态
+				window.cmd.clearSelect(); // 清空选中
+				window.cmd.selectNode(id); // 选中当前
+			}
 		}
-		// 如果当前节点id不是节点菜单和面板的nodeId，就隐藏菜单和面板
-		const nodeMenuId = getState().nodeMenu.nodeId;
-		const nodePanelId = getState().nodePanel.nodeId;
-		if (id !== nodeMenuId && id !== nodePanelId) {
-			setState({ nodeMenu: { visible: false }, nodePanel: { visible: false } });
-		}
+		hideMenuIfNeeded(); // 处理菜单可见性
 	};
 
 	const onContextMenu = (e) => {
