@@ -289,8 +289,8 @@ const ListInput = ({ label, value, onChange }) => {
  */
 
 
-const EnumInput = ({ label, value, options, onChange }) => {
-  const optionEntries = Object.entries(options || {})
+const EnumInput = ({ label, value, options, onChange, zoom }) => {
+  const optionEntries = Object.entries(options || {})             // 将选项对象转为[key, label]数组
 
   return (
     <div className="param-item">
@@ -299,14 +299,14 @@ const EnumInput = ({ label, value, options, onChange }) => {
         className="param-select"
         placeholder="请选择"
         aria-label={label}
-        value={value} 
+        value={value}
         onChange={onChange}
       >
         <Select.Trigger>
           <Select.Value />
           <Select.Indicator />
         </Select.Trigger>
-        <Select.Popover>
+        <Select.Popover style={{ scale: zoom }}>
           <ListBox>
             {optionEntries.map(([key, optionLabel]) => (
               <ListBox.Item
@@ -509,6 +509,7 @@ const NodePanel = () => {                                         // 节点面�
           value={currentValue}
           options={paramConfig.options}
           onChange={v => handleParamChange(paramKey, v)}
+          zoom={viewport.zoom}
         />
       )
     }
