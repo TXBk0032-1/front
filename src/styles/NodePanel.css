@@ -97,6 +97,8 @@ svg[data-slot="listbox-item-indicator--checkmark"] {
   stroke-width: 4 !important;
   stroke: #8b92e5 !important;
 }
+/* ========== 参数下拉框 ========== */
+
 [data-slot="select"] {
   width: max-content;
 }
