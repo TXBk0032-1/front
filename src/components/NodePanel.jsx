@@ -18,7 +18,7 @@
 
 import { useStore, setState, getState } from "../store"          // 导入store的hook和状态操作函数
 import { useReactFlow } from "@xyflow/react"                      // 导入ReactFlow的hook获取坐标转换函数
-import { Label, ListBox, Input, Switch, Slider, Select } from "@heroui/react"    // 导入HeroUI的输入框、开关、滑块、选择器组件
+import { Label, ListBox, Input, Switch, Select } from "@heroui/react"    // 导入HeroUI的输入框、开关、选择器组件
 import "../styles/NodePanel.css"                                  // 导入节点面板样式
 
 // ========== 整数输入组件 ==========
@@ -40,42 +40,22 @@ const IntInput = ({ label, value, range, onChange }) => {        // 整数输入
   const minValue = hasRange ? range[0] : undefined               // 获取最小值
   const maxValue = hasRange ? range[1] : undefined               // 获取最大值
 
-  if (hasRange) {                                                // 如果有范围限制，使用滑块组件
-    return (                                                     // 返回滑块JSX结构
-      <div className="param-item">
-        <Slider
-          className="param-slider"
-          aria-label={label}
-          size="sm"
-          step={1}
-          minValue={minValue}
-          maxValue={maxValue}
-          value={value}
-          onChange={onChange}
-        >
-          <Label>{label}</Label>  {/* 使用 HeroUI 的 Label 组件 */}
-          <Slider.Output />  {/* 使用 Slider.Output 显示当前值，替代原来的 param-value */}
-          <Slider.Track>
-            <Slider.Fill />
-            <Slider.Thumb />
-          </Slider.Track>
-        </Slider>
-      </div>
-
-    )
-  }
-
-  return (                                                       // 没有范围限制，使用输入框
+  return (                                                       // 使用输入框
     <div className="param-item">
       <span className="param-label">{label}</span>
       <Input                                                     // HeroUI输入框组件
         type="number"                                            // 输入类型为数字
         aria-label={label}                                       // 无障碍标签
         placeholder={label}                                      // 占位符
+        min={minValue}                                           // 最小值限制
+        max={maxValue}                                           // 最大值限制
         value={String(value)}                                    // 当前值转为字符串
         onChange={e => {                                         // 值改变处理
           const num = parseInt(e.target.value, 10)               // 转为整数
-          if (!isNaN(num)) onChange(num)                         // 如果是有效数字则回调
+          if (!isNaN(num)) {                                     // 如果是有效数字
+            const clamped = hasRange ? Math.max(minValue, Math.min(maxValue, num)) : num  // 有range则钳位
+            onChange(clamped)                                     // 回调修正后的值
+          }
         }}
         className="param-input number-input"                     // 样式类
       />
@@ -102,34 +82,7 @@ const FloatInput = ({ label, value, range, onChange }) => {      // 浮点数输
   const minValue = hasRange ? range[0] : undefined               // 获取最小值
   const maxValue = hasRange ? range[1] : undefined               // 获取最大值
 
-  if (hasRange) {                                                // 如果有范围限制，使用滑块组件
-    const rangeSpan = maxValue - minValue                        // 计算范围跨度
-    const step = rangeSpan > 10 ? 0.1 : 0.01                     // 根据范围自动确定步长
-
-    return (                                                     // 返回滑块JSX结构
-      <div className="param-item">
-        <Slider
-          className="param-slider"
-          aria-label={label}
-          size="sm"
-          step={step}
-          minValue={minValue}
-          maxValue={maxValue}
-          value={value}
-          onChange={onChange}
-        >
-          <Label>{label}</Label>
-          <Slider.Output />
-          <Slider.Track>
-            <Slider.Fill />
-            <Slider.Thumb />
-          </Slider.Track>
-        </Slider>
-      </div>
-    )
-  }
-
-  return (                                                       // 没有范围限制，使用输入框
+  return (                                                       // 使用输入框
     <div className="param-item">
       <span className="param-label">{label}</span>
       <Input                                                     // HeroUI输入框组件
@@ -137,10 +90,15 @@ const FloatInput = ({ label, value, range, onChange }) => {      // 浮点数输
         step="any"                                               // 允许任意小数
         aria-label={label}                                       // 无障碍标签
         placeholder={label}                                      // 占位符
+        min={minValue}                                           // 最小值限制
+        max={maxValue}                                           // 最大值限制
         value={String(value)}                                    // 当前值转为字符串
         onChange={e => {                                         // 值改变处理
           const num = parseFloat(e.target.value)                 // 转为浮点数
-          if (!isNaN(num)) onChange(num)                         // 如果是有效数字则回调
+          if (!isNaN(num)) {                                     // 如果是有效数字
+            const clamped = hasRange ? Math.max(minValue, Math.min(maxValue, num)) : num  // 有range则钳位
+            onChange(clamped)                                     // 回调修正后的值
+          }
         }}
         className="param-input number-input"                     // 样式类
       />
