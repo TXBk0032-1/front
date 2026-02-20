@@ -19,92 +19,8 @@
 import { useStore, setState, getState } from "../store"          // 导入store的hook和状态操作函数
 import { useReactFlow } from "@xyflow/react"                      // 导入ReactFlow的hook获取坐标转换函数
 import { Label, ListBox, Input, Switch, Select } from "@heroui/react"    // 导入HeroUI的输入框、开关、选择器组件
+import InfiniteSlider from "./InfiniteSlider"                     // 导入无限滑动条组件
 import "../styles/NodePanel.css"                                  // 导入节点面板样式
-
-// ========== 整数输入组件 ==========
-
-/**
- * IntInput - 整数输入组件
- *
- * 用法示例：
- *   <IntInput label="数量" value={10} range={[0, 100]} onChange={v => console.log(v)} />
- *
- * 参数说明：
- *   label - 参数名称
- *   value - 当前值
- *   range - 可选的范围限制 [min, max]
- *   onChange - 值改变时的回调函数
- */
-const IntInput = ({ label, value, range, onChange }) => {        // 整数输入组件，接收label、value、range、onChange参数
-  const hasRange = Array.isArray(range) && range.length === 2    // 判断是否有有效的范围限制
-  const minValue = hasRange ? range[0] : undefined               // 获取最小值
-  const maxValue = hasRange ? range[1] : undefined               // 获取最大值
-
-  return (                                                       // 使用输入框
-    <div className="param-item">
-      <span className="param-label">{label}</span>
-      <Input                                                     // HeroUI输入框组件
-        type="number"                                            // 输入类型为数字
-        aria-label={label}                                       // 无障碍标签
-        placeholder={label}                                      // 占位符
-        min={minValue}                                           // 最小值限制
-        max={maxValue}                                           // 最大值限制
-        value={String(value)}                                    // 当前值转为字符串
-        onChange={e => {                                         // 值改变处理
-          const num = parseInt(e.target.value, 10)               // 转为整数
-          if (!isNaN(num)) {                                     // 如果是有效数字
-            const clamped = hasRange ? Math.max(minValue, Math.min(maxValue, num)) : num  // 有range则钳位
-            onChange(clamped)                                     // 回调修正后的值
-          }
-        }}
-        className="param-input number-input"                     // 样式类
-      />
-    </div>
-  )
-}
-
-// ========== 浮点数输入组件 ==========
-
-/**
- * FloatInput - 浮点数输入组件
- *
- * 用法示例：
- *   <FloatInput label="比例" value={0.5} range={[0, 1]} onChange={v => console.log(v)} />
- *
- * 参数说明：
- *   label - 参数名称
- *   value - 当前值
- *   range - 可选的范围限制 [min, max]
- *   onChange - 值改变时的回调函数
- */
-const FloatInput = ({ label, value, range, onChange }) => {      // 浮点数输入组件，接收label、value、range、onChange参数
-  const hasRange = Array.isArray(range) && range.length === 2    // 判断是否有有效的范围限制
-  const minValue = hasRange ? range[0] : undefined               // 获取最小值
-  const maxValue = hasRange ? range[1] : undefined               // 获取最大值
-
-  return (                                                       // 使用输入框
-    <div className="param-item">
-      <span className="param-label">{label}</span>
-      <Input                                                     // HeroUI输入框组件
-        type="number"                                            // 输入类型为数字
-        step="any"                                               // 允许任意小数
-        aria-label={label}                                       // 无障碍标签
-        placeholder={label}                                      // 占位符
-        min={minValue}                                           // 最小值限制
-        max={maxValue}                                           // 最大值限制
-        value={String(value)}                                    // 当前值转为字符串
-        onChange={e => {                                         // 值改变处理
-          const num = parseFloat(e.target.value)                 // 转为浮点数
-          if (!isNaN(num)) {                                     // 如果是有效数字
-            const clamped = hasRange ? Math.max(minValue, Math.min(maxValue, num)) : num  // 有range则钳位
-            onChange(clamped)                                     // 回调修正后的值
-          }
-        }}
-        className="param-input number-input"                     // 样式类
-      />
-    </div>
-  )
-}
 
 // ========== 字符串输入组件 ==========
 
@@ -414,24 +330,33 @@ const NodePanel = () => {                                         // 节点面�
     const currentValue = paramConfig.value ?? paramConfig.default ?? "没有值"           // 获取当前值
 
     if (type === "int") {                                         // 如果是整数类型
-      return (                                                    // 返回整数输入组件
-        <IntInput
+      return (                                                    // 返回无限滑动条（整数模式）
+        <InfiniteSlider
           key={paramKey}
           label={label}
           value={currentValue}
-          range={paramConfig.range}
+          min={paramConfig.range?.[0]}
+          max={paramConfig.range?.[1]}
+          step={1}
+          integer={true}
+          zoom={viewport.zoom}
           onChange={v => handleParamChange(paramKey, v)}
         />
       )
     }
 
     if (type === "float") {                                       // 如果是浮点数类型
-      return (                                                    // 返回浮点数输入组件
-        <FloatInput
+      const autoStep = paramConfig.range ? (paramConfig.range[1] - paramConfig.range[0]) / 100 : 0.1 // 自动计算步长
+      return (                                                    // 返回无限滑动条（浮点模式）
+        <InfiniteSlider
           key={paramKey}
           label={label}
           value={currentValue}
-          range={paramConfig.range}
+          min={paramConfig.range?.[0]}
+          max={paramConfig.range?.[1]}
+          step={autoStep}
+          integer={false}
+          zoom={viewport.zoom}
           onChange={v => handleParamChange(paramKey, v)}
         />
       )
